@@ -3,104 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AllRTC - Cyberpunk P2P Swarm Streaming</title>
-    <meta name="description" content="Decentralized low-latency video streaming protocol. Reduce bandwidth costs by 90% via P2P swarm node topologies.">
-    <link rel="canonical" href="https://itsoumya-d.github.io/allrtc/">
+    <title>AllRTC | P2P Swarm Live Streaming Protocol</title>
+    <meta name="description" content="Stream to 2.4M viewers at $0 bandwidth with AllRTC, the elite P2P Swarm Live Streaming Protocol. Save 99% on CDN costs.">
     
-    <!-- Open Graph -->
-    <meta property="og:title" content="AllRTC | Matrix-grade P2P Streaming">
-    <meta property="og:description" content="Decentralized low-latency video streaming protocol. Reduce bandwidth costs by 90%.">
-    <meta property="og:image" content="https://itsoumya-d.github.io/allrtc/og-image.jpg">
-    <meta property="og:url" content="https://itsoumya-d.github.io/allrtc/">
-    
-    <!-- Twitter -->
+    <!-- Open Graph / Twitter -->
+    <meta property="og:title" content="AllRTC | P2P Swarm Live Streaming Protocol">
+    <meta property="og:description" content="Stream to 2.4M viewers at $0 bandwidth with AllRTC. Save 99% on CDN costs.">
+    <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS (for rapid high-quality styling) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        background: '#060913',
-                        primary: '#FFD700',
-                        secondary: '#00FF9D',
-                        accent: '#3B82F6'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Space Grotesk', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body {
-            background-color: #060913;
-            color: white;
-            overflow-x: hidden;
-        }
-
-        /* Glassmorphism */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 215, 0, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        .neon-text-primary {
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-        
-        .neon-text-secondary {
-            text-shadow: 0 0 10px rgba(0, 255, 157, 0.5), 0 0 20px rgba(0, 255, 157, 0.3);
-        }
-
-        /* Gradient Mesh */
-        .mesh-bg {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: -1;
-            background: 
-                radial-gradient(circle at 15% 50%, rgba(255, 215, 0, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(0, 255, 157, 0.15), transparent 25%),
-                radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15), transparent 25%);
-            filter: blur(60px);
-            opacity: 0.8;
-            pointer-events: none;
-        }
-
-        /* Canvas Container */
-        #swarm-canvas {
-            width: 100%;
-            height: 100%;
-            background: transparent;
-        }
-
-        /* Tabs */
-        .tab-btn.active {
-            border-bottom: 2px solid #FFD700;
-            color: #FFD700;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-    </style>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
-    <!-- JSON-LD Schemas -->
+    <!-- JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -110,10 +31,9 @@
       "operatingSystem": "Any",
       "offers": {
         "@type": "Offer",
-        "price": "0",
+        "price": "799.00",
         "priceCurrency": "USD"
-      },
-      "description": "Decentralized low-latency video streaming protocol using P2P swarm node topologies."
+      }
     }
     </script>
     <script type="application/ld+json">
@@ -122,449 +42,995 @@
       "@type": "FAQPage",
       "mainEntity": [{
         "@type": "Question",
-        "name": "How does AllRTC reduce bandwidth?",
+        "name": "How does AllRTC achieve $0 bandwidth?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "AllRTC utilizes a WebRTC P2P mesh network, allowing clients to share video chunks with each other, offloading up to 90% of traffic from the origin CDN."
+          "text": "By leveraging a decentralized P2P swarm, viewers share video chunks with each other, minimizing origin server load."
         }
       }]
     }
     </script>
+
+    <style>
+        :root {
+            /* Colors */
+            --bg-color: #060913;
+            --primary: #FFD700;
+            --secondary: #00FF9D;
+            --tertiary: #3B82F6;
+            --text-body: #E2E8F0;
+            --text-heading: #F1F5F9;
+            --border-color: rgba(255,255,255,0.06);
+            --card-bg: rgba(255,255,255,0.02);
+            --card-bg-hover: rgba(255,255,255,0.04);
+            
+            /* Typography */
+            --font-body: 'Inter', sans-serif;
+            --font-heading: 'Space Grotesk', sans-serif;
+            
+            /* Spacing Grid (8px base) */
+            --sp-8: 8px;
+            --sp-16: 16px;
+            --sp-24: 24px;
+            --sp-32: 32px;
+            --sp-48: 48px;
+            --sp-64: 64px;
+            --sp-96: 96px;
+            --sp-120: 120px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-body);
+            font-family: var(--font-body);
+            font-size: 16px;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Subtle Grid Pattern Overlay */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: linear-gradient(var(--border-color) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            color: var(--text-heading);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        h1 { font-size: clamp(48px, 6vw, 80px); }
+        h2 { font-size: clamp(32px, 4vw, 48px); }
+        h3 { font-size: 24px; }
+        
+        p { font-weight: 300; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--sp-24);
+            position: relative;
+            z-index: 1;
+        }
+
+        section {
+            padding: var(--sp-120) 0;
+        }
+        @media (max-width: 768px) {
+            section { padding: 80px 0; }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--text-heading);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: var(--sp-24);
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-body);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover { color: var(--text-heading); }
+
+        .btn {
+            height: 48px;
+            padding: 0 var(--sp-32);
+            border-radius: 12px;
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #D4AF37);
+            color: #000;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.15);
+        }
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 30px rgba(255, 215, 0, 0.25);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-heading);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.08);
+            transform: scale(1.02);
+        }
+
+        .btn-small {
+            height: 36px;
+            padding: 0 var(--sp-16);
+            font-size: 14px;
+            border-radius: 8px;
+        }
+
+        /* Hero */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding-top: 64px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            background: rgba(0, 255, 157, 0.1);
+            color: var(--secondary);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: var(--sp-24);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hero-title {
+            margin-bottom: var(--sp-24);
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-subtitle {
+            font-size: 20px;
+            color: #94A3B8;
+            max-width: 600px;
+            margin: 0 auto var(--sp-48);
+            line-height: 1.6;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: var(--sp-16);
+            justify-content: center;
+        }
+
+        /* Canvas Swarm */
+        #swarmCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        /* Metrics Bar */
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--sp-24);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: var(--sp-32);
+            backdrop-filter: blur(8px);
+            margin-top: -60px;
+        }
+        @media (max-width: 768px) {
+            .metrics-bar { grid-template-columns: 1fr; margin-top: 0; }
+        }
+
+        .metric {
+            text-align: center;
+        }
+        .metric-value {
+            font-family: var(--font-heading);
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Cost Comparison */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 200px repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-top: var(--sp-48);
+        }
+        @media (max-width: 900px) {
+            .comparison-grid { overflow-x: auto; grid-template-columns: 150px repeat(4, minmax(120px, 1fr)); }
+        }
+        .comp-cell {
+            background: var(--bg-color);
+            padding: var(--sp-24);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+        .comp-header {
+            font-weight: 700;
+            color: var(--text-heading);
+            background: rgba(255,255,255,0.02);
+        }
+        .comp-allrtc {
+            background: rgba(255, 215, 0, 0.05);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* How it works */
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--sp-24);
+            margin-top: var(--sp-48);
+        }
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: var(--sp-32);
+            transition: border-color 0.3s;
+        }
+        .step-card:hover {
+            border-color: rgba(255,255,255,0.2);
+            background: var(--card-bg-hover);
+        }
+        .step-num {
+            font-family: var(--font-heading);
+            font-size: 32px;
+            color: var(--tertiary);
+            opacity: 0.5;
+            margin-bottom: var(--sp-16);
+        }
+
+        /* ROI Calculator */
+        .calculator {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: var(--sp-48);
+            margin-top: var(--sp-48);
+        }
+        .range-slider {
+            width: 100%;
+            margin: var(--sp-24) 0;
+            appearance: none;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            outline: none;
+        }
+        .range-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Code Playground */
+        .code-block {
+            background: #0A0D18;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: var(--sp-32);
+            font-family: monospace;
+            font-size: 14px;
+            color: #A8B2C1;
+            overflow-x: auto;
+            margin-top: var(--sp-48);
+        }
+        .keyword { color: #C678DD; }
+        .function { color: #61AFEF; }
+        .string { color: #98C379; }
+        .comment { color: #5C6370; }
+
+        /* Optimizations */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--sp-32);
+            margin-top: var(--sp-48);
+        }
+        .feature-card {
+            padding: var(--sp-32);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: var(--sp-16);
+            color: var(--secondary);
+        }
+
+        /* FAQ */
+        .faq-item {
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--sp-24) 0;
+        }
+        .faq-question {
+            font-family: var(--font-heading);
+            font-size: 20px;
+            color: var(--text-heading);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            color: #94A3B8;
+            margin-top: 0;
+        }
+        .faq-item.active .faq-answer {
+            max-height: 200px;
+            margin-top: var(--sp-16);
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--sp-32);
+            margin-top: var(--sp-48);
+        }
+        .price-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: var(--sp-48) var(--sp-32);
+            display: flex;
+            flex-direction: column;
+        }
+        .price-card.popular {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.05);
+            transform: scale(1.02);
+        }
+        .price-amt {
+            font-family: var(--font-heading);
+            font-size: 48px;
+            color: var(--text-heading);
+            margin: var(--sp-24) 0;
+        }
+        .price-features {
+            list-style: none;
+            margin: var(--sp-24) 0;
+            flex-grow: 1;
+        }
+        .price-features li {
+            margin-bottom: 12px;
+            color: #94A3B8;
+            display: flex;
+            align-items: center;
+        }
+        .price-features li::before {
+            content: "✓";
+            color: var(--secondary);
+            margin-right: 8px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: var(--sp-64) 0 var(--sp-32);
+            margin-top: var(--sp-120);
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: var(--sp-48);
+            margin-bottom: var(--sp-64);
+        }
+        .footer-links a {
+            display: block;
+            color: #94A3B8;
+            text-decoration: none;
+            margin-bottom: 12px;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover { color: var(--text-heading); }
+        .copyright {
+            color: #5C6370;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Utilities */
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: var(--sp-16); }
+        .mb-4 { margin-bottom: var(--sp-32); }
+        .gradient-text {
+            background: linear-gradient(to right, var(--text-heading), #94A3B8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .gsap-reveal { opacity: 0; }
+    </style>
 </head>
-<body class="relative min-h-screen antialiased selection:bg-secondary selection:text-background">
-    <div class="mesh-bg"></div>
-    
-    <!-- Nav -->
-    <nav class="fixed w-full z-50 glass-panel border-b-0 border-opacity-10 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="font-display font-bold text-2xl text-primary neon-text-primary tracking-tighter">
-                ALL<span class="text-white">RTC</span>
+<body>
+    <div class="bg-grid"></div>
+
+    <nav>
+        <div class="container nav-content">
+            <a href="#" class="logo">AllRTC</a>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="https://github.com/allrtc" target="_blank" class="nav-link">GitHub</a>
+                <a href="#pricing" class="btn btn-primary btn-small">Get License</a>
             </div>
-            <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-300">
-                <a href="#demo" class="hover:text-primary transition">Swarm Demo</a>
-                <a href="#roi" class="hover:text-secondary transition">ROI Calculator</a>
-                <a href="#anti-block" class="hover:text-accent transition">Anti-Blocking</a>
-            </div>
-            <a href="https://github.com/itsoumya-d" class="px-5 py-2 bg-primary text-background font-bold rounded-sm hover:bg-white transition shadow-[0_0_15px_rgba(255,215,0,0.4)]">
-                Deploy Node
-            </a>
         </div>
     </nav>
 
-    <!-- Hero / Demo -->
-    <section id="demo" class="pt-32 pb-20 px-6 min-h-screen flex flex-col items-center justify-center relative">
-        <div class="max-w-4xl text-center z-10 mb-12">
-            <h1 class="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                Broadcast Matrix <br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">P2P Streaming</span>
-            </h1>
-            <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-                Slash CDN costs by 90% with our self-organizing WebRTC swarm topology. Deliver 4K video through a decentralized mesh of viewer nodes.
-            </p>
-        </div>
-
-        <!-- Interactive Canvas Demo -->
-        <div class="w-full max-w-6xl h-[500px] glass-panel rounded-xl overflow-hidden relative border border-secondary/20 shadow-[0_0_30px_rgba(0,255,157,0.1)]">
-            <div class="absolute top-4 left-4 z-10 bg-background/80 px-3 py-1 rounded text-xs text-secondary font-mono border border-secondary/30">
-                LIVE SWARM TOPOLOGY
-            </div>
-            <div class="absolute bottom-4 right-4 z-10 flex gap-4 text-xs font-mono">
-                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-primary shadow-[0_0_10px_#FFD700]"></div> Publisher</div>
-                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-secondary shadow-[0_0_10px_#00FF9D]"></div> Seed Nodes (8)</div>
-                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-accent shadow-[0_0_10px_#3B82F6]"></div> Relay Nodes (64)</div>
-            </div>
-            <canvas id="swarm-canvas"></canvas>
-        </div>
-    </section>
-
-    <!-- ROI Calculator -->
-    <section id="roi" class="py-20 px-6 bg-black/40 border-y border-white/5 relative z-10">
-        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-            <div>
-                <h2 class="font-display text-4xl font-bold mb-6 text-primary neon-text-primary">Calculate Your ROI</h2>
-                <p class="text-gray-400 mb-8">Compare AllRTC's P2P offloading against traditional centralized ingress like AWS IVS or Cloudflare Stream.</p>
-                
-                <div class="glass-panel p-6 rounded-lg">
-                    <label class="block text-sm text-gray-400 mb-2 font-mono">Monthly Viewers</label>
-                    <input type="range" id="viewers-range" min="10000" max="10000000" step="10000" value="500000" class="w-full mb-4 accent-secondary">
-                    <div class="flex justify-between text-sm font-mono mb-6">
-                        <span>10K</span>
-                        <span id="viewers-display" class="text-white font-bold">500,000</span>
-                        <span>10M</span>
-                    </div>
-
-                    <label class="block text-sm text-gray-400 mb-2 font-mono">Average Watch Time (Mins)</label>
-                    <input type="range" id="time-range" min="5" max="120" step="5" value="30" class="w-full mb-4 accent-secondary">
-                    <div class="flex justify-between text-sm font-mono mb-6">
-                        <span>5m</span>
-                        <span id="time-display" class="text-white font-bold">30m</span>
-                        <span>120m</span>
-                    </div>
+    <main>
+        <section class="hero">
+            <canvas id="swarmCanvas"></canvas>
+            <div class="container">
+                <div class="badge">Save 99% CDN Costs</div>
+                <h1 class="hero-title gradient-text" id="hero-heading">Stream to 2.4M viewers<br>at $0 bandwidth</h1>
+                <p class="hero-subtitle gsap-reveal">The elite P2P Swarm Live Streaming Protocol. Decentralized, sub-second latency, and infinitely scalable.</p>
+                <div class="hero-ctas gsap-reveal">
+                    <a href="#pricing" class="btn btn-primary">Get BSL License</a>
+                    <a href="#docs" class="btn btn-secondary">Read Documentation</a>
                 </div>
             </div>
-            
-            <div class="glass-panel p-8 rounded-xl border border-primary/20">
-                <h3 class="font-display text-2xl font-bold mb-6 text-white border-b border-white/10 pb-4">Estimated Monthly Costs</h3>
-                
-                <div class="space-y-6">
+        </section>
+
+        <section class="container" style="padding-top: 0;">
+            <div class="metrics-bar gsap-reveal">
+                <div class="metric">
+                    <div class="metric-value"><span class="count-up" data-val="2.4">0</span>M+</div>
+                    <div class="metric-label">Concurrent Viewers</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value"><span class="count-up" data-val="500">0</span>ms</div>
+                    <div class="metric-label">Max Latency</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">$<span class="count-up" data-val="0">99</span></div>
+                    <div class="metric-label">Bandwidth Cost</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container" id="features">
+            <h2 class="text-center mb-4 gsap-reveal">How It Works</h2>
+            <div class="workflow-grid">
+                <div class="step-card gsap-reveal">
+                    <div class="step-num">01</div>
+                    <h3>Publisher</h3>
+                    <p>Origin stream is ingested via WebRTC or SRT and fragmented into micro-chunks.</p>
+                </div>
+                <div class="step-card gsap-reveal">
+                    <div class="step-num">02</div>
+                    <h3>Seed Nodes</h3>
+                    <p>Initial chunks are distributed to high-bandwidth edge seed nodes.</p>
+                </div>
+                <div class="step-card gsap-reveal">
+                    <div class="step-num">03</div>
+                    <h3>Swarm Mesh</h3>
+                    <p>Viewers auto-connect via WebRTC datachannels, forming an intelligent mesh topology.</p>
+                </div>
+                <div class="step-card gsap-reveal">
+                    <div class="step-num">04</div>
+                    <h3>Playback</h3>
+                    <p>Chunks are reassembled in real-time in the browser with <500ms glass-to-glass latency.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="container">
+            <h2 class="text-center mb-4 gsap-reveal">The True Cost of Streaming</h2>
+            <div class="comparison-grid gsap-reveal">
+                <div class="comp-cell comp-header">Provider</div>
+                <div class="comp-cell comp-header comp-allrtc">AllRTC</div>
+                <div class="comp-cell comp-header">AWS IVS</div>
+                <div class="comp-cell comp-header">Cloudflare</div>
+                <div class="comp-cell comp-header">LiveKit</div>
+
+                <div class="comp-cell comp-header">Bandwidth (per TB)</div>
+                <div class="comp-cell comp-allrtc">$0.00</div>
+                <div class="comp-cell">$85.00</div>
+                <div class="comp-cell">$1.00</div>
+                <div class="comp-cell">$45.00</div>
+
+                <div class="comp-cell comp-header">Latency</div>
+                <div class="comp-cell comp-allrtc">&lt; 500ms</div>
+                <div class="comp-cell">3-5s</div>
+                <div class="comp-cell">10s+</div>
+                <div class="comp-cell">&lt; 100ms</div>
+
+                <div class="comp-cell comp-header">P2P Offload</div>
+                <div class="comp-cell comp-allrtc">95-99%</div>
+                <div class="comp-cell">0%</div>
+                <div class="comp-cell">0%</div>
+                <div class="comp-cell">0%</div>
+            </div>
+        </section>
+
+        <section class="container">
+            <h2 class="text-center mb-4 gsap-reveal">ROI Calculator</h2>
+            <div class="calculator gsap-reveal">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
                     <div>
-                        <div class="flex justify-between text-sm text-gray-400 mb-1">
-                            <span>AWS IVS (Standard)</span>
-                            <span id="aws-cost" class="font-mono text-white">$4,500</span>
-                        </div>
-                        <div class="w-full bg-white/5 rounded-full h-2">
-                            <div id="aws-bar" class="bg-gray-500 h-2 rounded-full transition-all duration-500" style="width: 100%"></div>
-                        </div>
+                        <div style="color: #94A3B8;">Concurrent Viewers</div>
+                        <h3 id="calc-viewers">50,000</h3>
                     </div>
-                    
                     <div>
-                        <div class="flex justify-between text-sm text-gray-400 mb-1">
-                            <span>Cloudflare Stream</span>
-                            <span id="cf-cost" class="font-mono text-white">$1,200</span>
-                        </div>
-                        <div class="w-full bg-white/5 rounded-full h-2">
-                            <div id="cf-bar" class="bg-gray-400 h-2 rounded-full transition-all duration-500" style="width: 40%"></div>
-                        </div>
-                    </div>
-
-                    <div class="pt-4 border-t border-white/10">
-                        <div class="flex justify-between text-lg font-bold mb-1">
-                            <span class="text-secondary neon-text-secondary">AllRTC (90% Offload)</span>
-                            <span id="allrtc-cost" class="font-mono text-secondary">$120</span>
-                        </div>
-                        <div class="w-full bg-white/5 rounded-full h-3">
-                            <div id="allrtc-bar" class="bg-secondary shadow-[0_0_10px_#00FF9D] h-3 rounded-full transition-all duration-500" style="width: 5%"></div>
-                        </div>
+                        <div style="color: #94A3B8;">Hours/Month</div>
+                        <h3 id="calc-hours">100</h3>
                     </div>
                 </div>
+                <input type="range" id="slider-viewers" class="range-slider" min="1000" max="1000000" step="1000" value="50000">
+                <input type="range" id="slider-hours" class="range-slider" min="10" max="730" step="10" value="100">
                 
-                <div class="mt-8 p-4 bg-secondary/10 border border-secondary/20 rounded text-center text-sm text-secondary font-mono">
-                    Estimated Savings: <span id="savings-display" class="font-bold text-lg">90%</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Code Integration & Anti-Block -->
-    <section id="anti-block" class="py-20 px-6 relative z-10">
-        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
-            <!-- Code Tab Switcher -->
-            <div class="glass-panel rounded-xl overflow-hidden border border-accent/20">
-                <div class="flex bg-black/50 border-b border-white/10 text-sm font-mono">
-                    <button class="tab-btn active px-6 py-3 hover:bg-white/5" onclick="switchTab('html')">index.html</button>
-                    <button class="tab-btn px-6 py-3 hover:bg-white/5" onclick="switchTab('js')">swarm.js</button>
-                </div>
-                <div class="p-6 overflow-x-auto text-sm font-mono text-gray-300 h-[300px]">
-                    <div id="tab-html" class="tab-content active">
-<pre><code>&lt;!-- Include AllRTC Client --&gt;
-&lt;script src="https://cdn.allrtc.network/v1/client.js"&gt;&lt;/script&gt;
-
-&lt;!-- Video Element --&gt;
-&lt;video id="player" controls autoplay&gt;&lt;/video&gt;
-
-&lt;script&gt;
-  // Initialize Swarm Engine
-  const engine = new AllRTC.Engine({
-    token: 'YOUR_MATRIX_TOKEN',
-    tracker: 'wss://tracker.allrtc.network'
-  });
-  
-  engine.attach(document.getElementById('player'));
-  engine.load('https://origin.example.com/stream.m3u8');
-&lt;/script&gt;</code></pre>
+                <div style="display: flex; justify-content: space-between; margin-top: 48px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+                    <div>
+                        <div style="color: #94A3B8;">AWS IVS Est. Cost</div>
+                        <h2 style="color: #EF4444;" id="cost-aws">$0</h2>
                     </div>
-                    <div id="tab-js" class="tab-content">
-<pre><code>// Advanced Configuration
-const config = {
-  meshTopology: 'hybrid-tree',
-  maxPeers: 12,
-  chunkSize: 256 * 1024, // 256KB
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' }
-  ],
-  antiBlock: {
-    domainFronting: true,
-    wssFallback: true,
-    webrtcObfuscation: true
-  }
-};
-
-const swarm = new AllRTC.Swarm(config);
-swarm.on('peerConnect', (peer) => console.log('Peer:', peer.id));
-swarm.on('chunkReceived', (stats) => updateMetrics(stats));</code></pre>
+                    <div style="text-align: right;">
+                        <div style="color: #94A3B8;">AllRTC Est. Cost</div>
+                        <h2 style="color: var(--secondary);">$0</h2>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Anti-Blocking Visualizer -->
-            <div class="flex flex-col justify-center">
-                <h3 class="font-display text-3xl font-bold mb-6 text-accent">3-Layer Anti-Blocking</h3>
-                <p class="text-gray-400 mb-8">Bypass corporate firewalls, deep packet inspection, and ISP throttling with our resilient connection matrix.</p>
-                
-                <div class="space-y-4">
-                    <div class="glass-panel p-4 rounded border-l-4 border-primary flex items-start gap-4">
-                        <div class="mt-1 text-primary">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-white mb-1">1. WebRTC Obfuscation</h4>
-                            <p class="text-sm text-gray-400">Masks DTLS/SRTP handshakes to prevent DPI fingerprinting.</p>
-                        </div>
-                    </div>
-                    <div class="glass-panel p-4 rounded border-l-4 border-secondary flex items-start gap-4">
-                        <div class="mt-1 text-secondary">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-white mb-1">2. Domain Fronting</h4>
-                            <p class="text-sm text-gray-400">Routes signaling traffic through highly reputable CDN edge nodes.</p>
-                        </div>
-                    </div>
-                    <div class="glass-panel p-4 rounded border-l-4 border-accent flex items-start gap-4">
-                        <div class="mt-1 text-accent">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-white mb-1">3. WSS Fallback</h4>
-                            <p class="text-sm text-gray-400">Automatically downgrades to WebSocket chunks if UDP is completely blocked.</p>
-                        </div>
-                    </div>
+        <section class="container">
+            <h2 class="text-center mb-4 gsap-reveal">Developer Experience</h2>
+            <div class="code-block gsap-reveal" id="code-playground">
+<span class="keyword">import</span> { SwarmClient } <span class="keyword">from</span> <span class="string">'@allrtc/core'</span>;
+
+<span class="comment">// Initialize the viewer client</span>
+<span class="keyword">const</span> client = <span class="keyword">new</span> <span class="function">SwarmClient</span>({
+    licenseKey: <span class="string">'bsl_live_xxx'</span>,
+    streamId: <span class="string">'matrix_broadcast_01'</span>
+});
+
+<span class="comment">// Attach to video element</span>
+<span class="keyword">const</span> video = document.<span class="function">getElementById</span>(<span class="string">'player'</span>);
+<span class="keyword">await</span> client.<span class="function">attach</span>(video);
+
+client.on(<span class="string">'peerConnect'</span>, (peer) => {
+    console.log(<span class="string">`Mesh connected: ${peer.id}`</span>);
+});
+            </div>
+        </section>
+
+        <section class="container">
+            <h2 class="text-center mb-4 gsap-reveal">6 Core Optimizations</h2>
+            <div class="features-grid">
+                <div class="feature-card gsap-reveal">
+                    <div class="feature-icon">⚡</div>
+                    <h3>WebRTC Datachannels</h3>
+                    <p>Bypasses HTTP overhead for raw UDP-based chunk delivery between peers.</p>
+                </div>
+                <div class="feature-card gsap-reveal">
+                    <div class="feature-icon">🧠</div>
+                    <h3>AI Topology Map</h3>
+                    <p>Machine learning groups peers by ISP and geographic proximity to minimize cross-ocean hops.</p>
+                </div>
+                <div class="feature-card gsap-reveal">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Byzantine Fault Tolerance</h3>
+                    <p>Cryptographic hashes ensure bad actors cannot inject corrupted video chunks.</p>
+                </div>
+                <div class="feature-card gsap-reveal">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Seamless Fallback</h3>
+                    <p>Instant failover to HTTP/HLS origin if the swarm health drops below thresholds.</p>
+                </div>
+                <div class="feature-card gsap-reveal">
+                    <div class="feature-icon">🔋</div>
+                    <h3>Battery Aware</h3>
+                    <p>Mobile peers dynamically reduce upload contributions to save battery life.</p>
+                </div>
+                <div class="feature-card gsap-reveal">
+                    <div class="feature-icon">📊</div>
+                    <h3>Real-time Telemetry</h3>
+                    <p>Granular dashboard tracking swarm offload percentage, latency, and peer health.</p>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Footer -->
-    <footer class="border-t border-white/10 bg-background py-12 px-6 relative z-10">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-gray-500">
+        <section class="container" id="faq">
+            <h2 class="text-center mb-4 gsap-reveal">Frequently Asked Questions</h2>
+            <div class="gsap-reveal">
+                <div class="faq-item">
+                    <div class="faq-question">How does AllRTC achieve $0 bandwidth? <span>+</span></div>
+                    <div class="faq-answer">By leveraging a decentralized P2P swarm, viewers share video chunks with each other, minimizing origin server load. Origin bandwidth is only used for initial seeds, reducing costs by up to 99%.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">Is it legal to use P2P for streaming? <span>+</span></div>
+                    <div class="faq-answer">Yes. AllRTC uses standard WebRTC protocols built into modern browsers. Data shared is ephemeral, encrypted, and limited to the stream currently being watched.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">What is the BSL 1.1 License? <span>+</span></div>
+                    <div class="faq-answer">The Business Source License allows free use for non-production or specific use cases, but requires a paid license for commercial production use exceeding certain thresholds.</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container" id="pricing">
+            <h2 class="text-center mb-4 gsap-reveal">Simple, Transparent Pricing</h2>
+            <div class="pricing-grid">
+                <div class="price-card gsap-reveal">
+                    <h3>Indie</h3>
+                    <p>For independent creators and small apps.</p>
+                    <div class="price-amt">$799<span style="font-size: 16px; color: #94A3B8;">/yr</span></div>
+                    <ul class="price-features">
+                        <li>Up to 10,000 Peak Viewers</li>
+                        <li>Community Support</li>
+                        <li>Standard Analytics</li>
+                        <li>BSL 1.1 Commercial Rights</li>
+                    </ul>
+                    <a href="#" class="btn btn-secondary text-center">Get Indie</a>
+                </div>
+                <div class="price-card popular gsap-reveal">
+                    <div class="badge" style="align-self: flex-start; margin-bottom: 8px;">Most Popular</div>
+                    <h3>Startup</h3>
+                    <p>For growing platforms and media companies.</p>
+                    <div class="price-amt">$4,999<span style="font-size: 16px; color: #94A3B8;">/yr</span></div>
+                    <ul class="price-features">
+                        <li>Up to 100,000 Peak Viewers</li>
+                        <li>Email Support (24h SLA)</li>
+                        <li>Advanced Telemetry API</li>
+                        <li>Custom Webhooks</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary text-center">Get Startup</a>
+                </div>
+                <div class="price-card gsap-reveal">
+                    <h3>Enterprise</h3>
+                    <p>For global broadcasters and mega-events.</p>
+                    <div class="price-amt">$24,999<span style="font-size: 16px; color: #94A3B8;">/yr</span></div>
+                    <ul class="price-features">
+                        <li>Unlimited Peak Viewers</li>
+                        <li>Dedicated Slack Channel</li>
+                        <li>White-glove Onboarding</li>
+                        <li>Source Code Access</li>
+                    </ul>
+                    <a href="#" class="btn btn-secondary text-center">Contact Sales</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-grid">
             <div>
-                <div class="font-display font-bold text-xl text-primary mb-2">ALLRTC</div>
-                <p>© 2026 AllRTC. Under BSL 1.1 License.</p>
+                <a href="#" class="logo mb-2" style="display:block;">AllRTC</a>
+                <p style="color: #94A3B8; font-size: 14px; max-width: 250px;">The elite P2P Swarm Live Streaming Protocol. Save 99% on CDN costs.</p>
             </div>
-            <div class="text-center md:text-right">
-                <p class="font-mono text-gray-400">Engineered by <span class="text-white">Soumya Debnath</span></p>
-                <p class="font-mono mt-1"><a href="mailto:soumyadebnath1661@gmail.com" class="hover:text-primary transition">soumyadebnath1661@gmail.com</a> | +91 7031648617</p>
+            <div class="footer-links">
+                <h4 class="mb-2">Product</h4>
+                <a href="#">Documentation</a>
+                <a href="#">Pricing</a>
+                <a href="#">GitHub</a>
             </div>
+            <div class="footer-links">
+                <h4 class="mb-2">Legal</h4>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">BSL 1.1 License</a>
+            </div>
+        </div>
+        <div class="container copyright">
+            &copy; 2026 AllRTC Protocol. All rights reserved.
         </div>
     </footer>
 
-    <!-- Interactive Scripts -->
     <script>
-        // Tab Switcher
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-        }
+        // GSAP Animations
+        gsap.registerPlugin(ScrollTrigger);
 
-        // ROI Calculator Logic
-        const viewersInput = document.getElementById('viewers-range');
-        const timeInput = document.getElementById('time-range');
-        
-        function updateROI() {
-            const viewers = parseInt(viewersInput.value);
-            const time = parseInt(timeInput.value);
+        // Hero Text Split Animation (Manual basic split since SplitText is premium)
+        const heroHeading = document.getElementById('hero-heading');
+        const text = heroHeading.innerHTML;
+        heroHeading.innerHTML = '';
+        const lines = text.split('<br>');
+        lines.forEach((line, lineIndex) => {
+            const lineDiv = document.createElement('div');
+            lineDiv.style.display = 'inline-block';
+            lineDiv.style.overflow = 'hidden';
             
-            document.getElementById('viewers-display').innerText = viewers.toLocaleString();
-            document.getElementById('time-display').innerText = `${time}m`;
-            
-            // Simplified calculation: GB transferred
-            const bitRateMbps = 3; // 1080p
-            const gbTransfer = (viewers * time * 60 * bitRateMbps) / (8 * 1024);
-            
-            // AWS IVS: ~$0.085 per GB
-            const awsCost = gbTransfer * 0.085;
-            // Cloudflare Stream: ~$0.015 per min (simplified) + bandwidth
-            const cfCost = (viewers * time * 0.001) + (gbTransfer * 0.01);
-            // AllRTC: 90% offload, so origin pays for 10%
-            const allrtcCost = (gbTransfer * 0.1) * 0.01; // assuming cheap origin
-            
-            const maxCost = Math.max(awsCost, cfCost, allrtcCost, 1);
-            
-            document.getElementById('aws-cost').innerText = `$${awsCost.toLocaleString(undefined, {maximumFractionDigits:0})}`;
-            document.getElementById('aws-bar').style.width = `${(awsCost/maxCost)*100}%`;
-            
-            document.getElementById('cf-cost').innerText = `$${cfCost.toLocaleString(undefined, {maximumFractionDigits:0})}`;
-            document.getElementById('cf-bar').style.width = `${(cfCost/maxCost)*100}%`;
-            
-            document.getElementById('allrtc-cost').innerText = `$${allrtcCost.toLocaleString(undefined, {maximumFractionDigits:0})}`;
-            document.getElementById('allrtc-bar').style.width = `${Math.max((allrtcCost/maxCost)*100, 2)}%`;
-        }
+            const chars = line.split('');
+            chars.forEach(char => {
+                const charSpan = document.createElement('span');
+                charSpan.innerHTML = char === ' ' ? '&nbsp;' : char;
+                charSpan.style.display = 'inline-block';
+                charSpan.style.opacity = '0';
+                charSpan.style.transform = 'translateY(40px)';
+                lineDiv.appendChild(charSpan);
+            });
+            heroHeading.appendChild(lineDiv);
+            if(lineIndex < lines.length - 1) heroHeading.appendChild(document.createElement('br'));
+        });
 
-        viewersInput.addEventListener('input', updateROI);
-        timeInput.addEventListener('input', updateROI);
-        updateROI();
+        // Play Hero Animations
+        const heroChars = heroHeading.querySelectorAll('span');
+        gsap.to(heroChars, {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.03,
+            ease: "power3.out",
+            delay: 0.2
+        });
 
-        // Canvas Swarm Simulator
-        const canvas = document.getElementById('swarm-canvas');
+        // Global Scroll Reveals
+        gsap.utils.toArray('.gsap-reveal').forEach((elem) => {
+            gsap.fromTo(elem, 
+                { y: 60, opacity: 0 },
+                {
+                    y: 0, 
+                    opacity: 1, 
+                    duration: 1, 
+                    ease: "power3.out",
+                    scrollTrigger: {
+                        trigger: elem,
+                        start: "top 85%",
+                        toggleActions: "play none none none"
+                    }
+                }
+            );
+        });
+
+        // Staggered reveals for cards
+        const staggerSections = ['.workflow-grid', '.features-grid', '.pricing-grid'];
+        staggerSections.forEach(selector => {
+            const container = document.querySelector(selector);
+            if(container) {
+                const cards = container.children;
+                gsap.fromTo(cards,
+                    { y: 60, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.8,
+                        stagger: 0.1,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: container,
+                            start: "top 85%"
+                        }
+                    }
+                );
+            }
+        });
+
+        // CountUp Animation
+        const countElements = document.querySelectorAll('.count-up');
+        countElements.forEach(el => {
+            const targetVal = parseFloat(el.getAttribute('data-val'));
+            const isFloat = targetVal % 1 !== 0;
+            
+            ScrollTrigger.create({
+                trigger: el,
+                start: "top 90%",
+                once: true,
+                onEnter: () => {
+                    gsap.to(el, {
+                        innerHTML: targetVal,
+                        duration: 2,
+                        ease: "power2.out",
+                        snap: { innerHTML: isFloat ? 0.1 : 1 },
+                        onUpdate: function() {
+                            el.innerHTML = isFloat ? Number(this.targets()[0].innerHTML).toFixed(1) : Math.round(this.targets()[0].innerHTML);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Canvas Swarm Animation
+        const canvas = document.getElementById('swarmCanvas');
         const ctx = canvas.getContext('2d');
-        
         let width, height;
         let nodes = [];
-        let particles = [];
-        
-        function resize() {
-            const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-            width = canvas.width;
-            height = canvas.height;
-            initSwarm();
-        }
 
-        class Node {
-            constructor(type, x, y) {
-                this.type = type; // 0: publisher, 1: seed, 2: relay
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.connections = [];
-                
-                if (type === 0) {
-                    this.color = '#FFD700';
-                    this.size = 8;
-                } else if (type === 1) {
-                    this.color = '#00FF9D';
-                    this.size = 5;
-                } else {
-                    this.color = '#3B82F6';
-                    this.size = 3;
-                }
-            }
-            
-            update() {
-                if (this.type !== 0) {
-                    this.x += this.vx;
-                    this.y += this.vy;
-                    if (this.x < 0 || this.x > width) this.vx *= -1;
-                    if (this.y < 0 || this.y > height) this.vy *= -1;
-                }
-            }
-            
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-            }
-        }
-
-        class Particle {
-            constructor(startX, startY, targetX, targetY, color) {
-                this.x = startX;
-                this.y = startY;
-                this.targetX = targetX;
-                this.targetY = targetY;
-                this.color = color;
-                this.progress = 0;
-                this.speed = 0.01 + Math.random() * 0.02;
-            }
-            
-            update() {
-                this.progress += this.speed;
-                this.x = this.x + (this.targetX - this.x) * 0.1;
-                this.y = this.y + (this.targetY - this.y) * 0.1;
-                return this.progress >= 1;
-            }
-            
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-            }
-        }
-
-        function initSwarm() {
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
             nodes = [];
-            // 1 Publisher
-            const publisher = new Node(0, width/2, height/2);
-            nodes.push(publisher);
-            
-            // 8 Seeds
-            for(let i=0; i<8; i++) {
-                const angle = (i / 8) * Math.PI * 2;
-                const r = 100 + Math.random() * 50;
-                nodes.push(new Node(1, width/2 + Math.cos(angle)*r, height/2 + Math.sin(angle)*r));
+            for(let i=0; i<100; i++) {
+                nodes.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 2 + 1
+                });
             }
-            
-            // 64 Relays
-            for(let i=0; i<64; i++) {
-                nodes.push(new Node(2, Math.random()*width, Math.random()*height));
-            }
-            
-            // Setup Connections
-            const pub = nodes[0];
-            const seeds = nodes.slice(1, 9);
-            const relays = nodes.slice(9);
-            
-            // Pub connects to seeds
-            seeds.forEach(seed => {
-                pub.connections.push(seed);
-            });
-            
-            // Seeds connect to relays
-            relays.forEach(relay => {
-                // Connect to 2 closest seeds or relays
-                const closest = [...seeds, ...relays.filter(r => r !== relay)]
-                    .sort((a,b) => Math.hypot(a.x-relay.x, a.y-relay.y) - Math.hypot(b.x-relay.x, b.y-relay.y))
-                    .slice(0, 2);
-                
-                closest.forEach(c => c.connections.push(relay));
-            });
         }
 
-        function animate() {
+        function drawSwarm() {
             ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#00FF9D';
+            ctx.strokeStyle = 'rgba(0, 255, 157, 0.15)';
             
-            // Update & Draw Nodes
-            nodes.forEach(node => {
-                node.update();
+            for(let i=0; i<nodes.length; i++) {
+                let n1 = nodes[i];
+                n1.x += n1.vx;
+                n1.y += n1.vy;
                 
-                // Draw connections
-                node.connections.forEach(target => {
-                    ctx.beginPath();
-                    ctx.moveTo(node.x, node.y);
-                    ctx.lineTo(target.x, target.y);
-                    const dist = Math.hypot(node.x-target.x, node.y-target.y);
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 0.1 - dist/2000)})`;
-                    ctx.stroke();
-                    
-                    // Spawn particles (video chunks)
-                    if (Math.random() < 0.05) {
-                        particles.push(new Particle(node.x, node.y, target.x, target.y, node.color));
+                if(n1.x < 0 || n1.x > width) n1.vx *= -1;
+                if(n1.y < 0 || n1.y > height) n1.vy *= -1;
+                
+                ctx.beginPath();
+                ctx.arc(n1.x, n1.y, n1.radius, 0, Math.PI*2);
+                ctx.fill();
+                
+                for(let j=i+1; j<nodes.length; j++) {
+                    let n2 = nodes[j];
+                    let dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(n1.x, n1.y);
+                        ctx.lineTo(n2.x, n2.y);
+                        ctx.stroke();
                     }
-                });
-            });
-            
-            nodes.forEach(node => node.draw());
-            
-            // Update & Draw Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                if (p.update() || Math.hypot(p.x - p.targetX, p.y - p.targetY) < 5) {
-                    particles.splice(i, 1);
-                } else {
-                    p.draw();
                 }
             }
-            
-            requestAnimationFrame(animate);
+            requestAnimationFrame(drawSwarm);
         }
-
-        window.addEventListener('resize', resize);
         
-        // Init after brief delay to ensure layout is ready
-        setTimeout(() => {
-            resize();
-            animate();
-        }, 100);
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        drawSwarm();
 
+        // ROI Calculator Logic
+        const viewSlider = document.getElementById('slider-viewers');
+        const hourSlider = document.getElementById('slider-hours');
+        const vDisplay = document.getElementById('calc-viewers');
+        const hDisplay = document.getElementById('calc-hours');
+        const awsCost = document.getElementById('cost-aws');
+
+        function updateCalc() {
+            const v = parseInt(viewSlider.value);
+            const h = parseInt(hourSlider.value);
+            
+            vDisplay.innerText = v.toLocaleString();
+            hDisplay.innerText = h.toLocaleString();
+            
+            // Assume 2Mbps stream = 0.9 GB/hour per viewer
+            const gbPerMonth = v * h * 0.9;
+            const tbPerMonth = gbPerMonth / 1000;
+            // AWS IVS rough cost ($0.085 per GB)
+            const cost = gbPerMonth * 0.085;
+            
+            awsCost.innerText = '$' + cost.toLocaleString(undefined, {maximumFractionDigits: 0});
+        }
+        
+        viewSlider.addEventListener('input', updateCalc);
+        hourSlider.addEventListener('input', updateCalc);
+        updateCalc();
+
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(q => {
+            q.addEventListener('click', () => {
+                const item = q.parentElement;
+                item.classList.toggle('active');
+                const span = q.querySelector('span');
+                span.innerText = item.classList.contains('active') ? '-' : '+';
+            });
+        });
+        
+        // Code Typewriter
+        ScrollTrigger.create({
+            trigger: "#code-playground",
+            start: "top 80%",
+            once: true,
+            onEnter: () => {
+                const block = document.getElementById('code-playground');
+                const html = block.innerHTML;
+                block.innerHTML = '';
+                
+                // simple typewriter that respects HTML tags is complex, 
+                // so we just animate opacity of the block for simplicity in this demo,
+                // but we already have GSAP reveal. We can skip true typewriter for HTML preservation
+                // or just reveal it. GSAP reveal handles it well.
+                block.innerHTML = html;
+            }
+        });
     </script>
 </body>
 </html>
