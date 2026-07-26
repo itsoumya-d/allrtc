@@ -1,0 +1,32 @@
+{
+  "name": "allrtc",
+  "version": "1.0.0",
+  "description": "P2P swarm-based live streaming protocol. Every viewer becomes a relay.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "webrtc",
+    "p2p",
+    "streaming",
+    "live",
+    "swarm",
+    "allrtc"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.5.4"
+  }
+}
