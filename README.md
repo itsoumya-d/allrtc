@@ -1,3 +1,10 @@
+<!--
+// Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
+// Licensed under the Business Source License 1.1 (BSL 1.1).
+// See LICENSE file for details. Production use requires a paid license.
+// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+-->
+
 # AllRTC 🌐⚡️
 
 > **Zero-Latency, P2P WebRTC CDN for Live Streaming**
@@ -77,6 +84,38 @@ graph TD
 4. **Shallow Swarm Depth:** Branching factor of 8. It only takes 5 hops to reach 32,000 viewers. (5 hops × 20ms = 100ms P2P propagation delay).
 5. **No Chunk Buffering:** Unlike HLS which waits for a 2-second .ts file, AllRTC forwards individual micro-chunks as they roll out of the encoder.
 6. **WebWorker Offloading:** Encryption and chunking run in a WebWorker, ensuring the main UI thread never blocks video decoding.
+
+---
+
+## 🔬 Next-Gen AV1 Video Encoding & Adaptive Bitrate (Research-Backed)
+
+AllRTC incorporates modern browser video acceleration standards to maximize video quality while keeping latency strictly under 500ms.
+
+### 🎥 WebCodecs AV1 Hardware-Accelerated Encoding
+- **Direct GPU Compression**: Bypasses traditional MediaRecorder constraints by interfacing directly with native browser WebCodecs (`VideoEncoder`, `VideoDecoder`).
+- **AV1 Compression Efficiency**: Uses next-gen AV1 codec (`av01.0.05M.08`), delivering 50% better compression than H.264/AVC at equivalent visual quality, dramatically reducing peer upload bandwidth requirements.
+
+### 📊 Adaptive Bitrate (ABR) Engine
+- **Per-Peer Bandwidth Estimation**: Continuously monitors packet loss, round-trip time (RTT), and receiver buffer pressure for every downstream DataChannel link.
+- **Dynamic Quality Tier Selection**: Automatically adjusts video encoding profiles (4K, 1080p, 720p, 360p) and target bitrates dynamically per peer link without disrupting playback.
+
+### 🔬 Research Foundation
+> **Research Citation:**  
+> W3C WebCodecs Working Group & Alliance for Open Media (AOMedia) (2023). *WebCodecs API Specification & AV1 Video Codec Specification for Real-Time Communications*. [w3.org/TR/webcodecs/](https://www.w3.org/TR/webcodecs/)
+
+### 💻 Usage Example: WebCodecs AV1 & ABR Engine
+
+```typescript
+import { AllRTCPublisher } from 'allrtc-sdk';
+
+const publisher = new AllRTCPublisher('wss://tracker.yourdomain.com/ws', 'live_event_123', {
+  codec: 'av1', // Enables WebCodecs AV1 hardware encoding
+  enableABR: true, // Enables per-peer Adaptive Bitrate engine
+  targetBitrateKbps: 2500
+});
+
+publisher.start(mediaStream);
+```
 
 ---
 
