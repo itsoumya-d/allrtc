@@ -13,6 +13,7 @@ export class AdaptiveBitrateManager {
   private bandwidthHistory: Map<string, number[]> = new Map();
   private readonly WINDOW_SIZE = 10;
   private qualityChangeListeners: ((peerId: string, tier: QualityTier) => void)[] = [];
+  private lastTier: Map<string, string> = new Map();
 
   constructor() {}
 
@@ -34,7 +35,7 @@ export class AdaptiveBitrateManager {
     });
 
     if (bandwidthKbps === 0) {
-      bandwidthKbps = 5000; 
+      bandwidthKbps = 1000; // Conservative default until real stats arrive
     }
 
     let history = this.bandwidthHistory.get(peerId) || [];
@@ -47,7 +48,11 @@ export class AdaptiveBitrateManager {
     const avgBandwidth = history.reduce((a, b) => a + b, 0) / history.length;
     
     const tier = this.selectQualityTier(avgBandwidth);
-    this.emitQualityChange(peerId, tier);
+    const previousTier = this.lastTier.get(peerId);
+    if (tier.name !== previousTier) {
+      this.lastTier.set(peerId, tier.name);
+      this.emitQualityChange(peerId, tier);
+    }
 
     return avgBandwidth;
   }
@@ -66,6 +71,7 @@ export class AdaptiveBitrateManager {
     }
   }
 
+  /** Returns optimal chunk duration in milliseconds */
   public getAdaptiveChunkSize(bandwidthKbps: number): number {
     if (bandwidthKbps < 1000) {
       return 20; // smaller chunks for slow peers
