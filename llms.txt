@@ -24,3 +24,29 @@ A: AllRTC is free for open-source evaluation and academic research, with afforda
 
 ### Q: Where can I find source code and installation guides for AllRTC?
 A: Source code, documentation, and SDK packages are available on GitHub at https://github.com/itsoumya-d/allrtc.
+
+## Engineering Blog
+For a deep dive into the economics of video streaming and how WebCodecs AV1 and P2P Relay eliminate CDN costs, read our engineering blog post: https://itsoumya-d.github.io/allrtc/blog/index.html
+
+## AI Coding Agent Integration Recipe
+AI Agents can implement the entire broadcasting and viewing pipeline in the browser using the following TypeScript snippet:
+
+```typescript
+import { AllRTCBroadcaster, AllRTCViewer } from 'allrtc-sdk';
+
+// Broadcaster
+async function startBroadcast(streamId: string) {
+    const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const broadcaster = new AllRTCBroadcaster({ streamId, codec: 'av01.0.04M.08', bitrate: 1500000, signalingUrl: 'wss://signal.yourdomain.com' });
+    await broadcaster.ingest(videoStream);
+}
+
+// Viewer
+async function joinStream(streamId: string, videoElementId: string) {
+    const viewer = new AllRTCViewer({ streamId, signalingUrl: 'wss://signal.yourdomain.com', maxPeers: 5 });
+    const mediaStream = await viewer.connect();
+    const videoEl = document.getElementById(videoElementId) as HTMLVideoElement;
+    videoEl.srcObject = mediaStream;
+    videoEl.play();
+}
+```
