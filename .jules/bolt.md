@@ -1,0 +1,3 @@
+## 2024-05-24 - Faster ArrayBuffer to Hex String
+**Learning:** `Array.from(new Uint8Array(buffer))` followed by `.map` and string concatenation is slow for converting crypto digests to hex strings. Precomputing a hex lookup table and using a simple `for` loop over the `Uint8Array` directly avoids intermediate array allocations and is measurably faster.
+**Action:** Replace `Array.from(...).map(...)` in `chunk-hasher.ts` with a pre-calculated `hexTable` array and a tight loop. This is critical because `hashChunk` is called for every 50ms video chunk, so a small overhead adds up to high CPU usage.
