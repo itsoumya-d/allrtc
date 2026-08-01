@@ -7,7 +7,7 @@
 
 # AllRTC
 
-> **P2P WebRTC Swarm for Live Streaming — Every Viewer Becomes a Relay**
+> **AllRTC redistributes a live video stream peer-to-peer among its viewers, so egress bandwidth grows far more slowly than the size of the audience.**
 
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-red.svg)](https://mariadb.com/bsl11/)
 [![Status](https://img.shields.io/badge/status-pre--release-orange.svg)](#known-limitations)
