@@ -13,4 +13,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://allrtc.com/sitemap.xml
+Sitemap: https://itsoumya-d.github.io/allrtc/sitemap.xml
