@@ -1,6 +1,6 @@
 # AllRTC
 
-> P2P WebRTC swarm live-streaming SDK. Every viewer relays chunks to downstream peers. Pre-release. Not on npm.
+> AllRTC redistributes a live video stream peer-to-peer among its viewers, so egress bandwidth grows far more slowly than the size of the audience.
 
 AllRTC is a browser TypeScript SDK for P2P live video broadcasting. The publisher sends micro-chunks to seed peers via WebRTC DataChannels. Each peer relays to its children. A Go tracker server manages topology and signaling only — it never handles media. An adaptive bitrate manager adjusts encoding per peer link.
 
