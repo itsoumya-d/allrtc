@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 package main
 
@@ -41,8 +41,12 @@ func (s *SwarmTree) AddPeer(p *Peer) error {
 		return nil
 	}
 
-	// Primary parent assignment
-	parent := s.findBestParentAvoid("")
+	// Primary parent assignment.
+	// The new peer is already present in s.peers here and its Depth is still 0,
+	// so it ties with the publisher at the root of the search. It must be
+	// excluded explicitly, otherwise it wins the "fewest children" tie-break
+	// and is handed back as its own parent.
+	parent := s.findBestParentFor(p)
 	if parent == nil {
 		return fmt.Errorf("no available parent found")
 	}
@@ -60,8 +64,9 @@ func (s *SwarmTree) AddPeer(p *Peer) error {
 		parent.Role = RoleRelay
 	}
 
-	// Secondary Backup parent assignment for Dual-Parent Redundancy (Zero-Freeze)
-	backupParent := s.findBestParentAvoid(parent.ID)
+	// Secondary Backup parent assignment for Dual-Parent Redundancy (Zero-Freeze).
+	// Must avoid both the primary parent and the new peer itself.
+	backupParent := s.findBestParentFor(p, parent.ID)
 	if backupParent != nil {
 		p.BackupID = backupParent.ID
 	}
@@ -135,8 +140,8 @@ func (s *SwarmTree) reparent(childID string) {
 	}
 
 	child.ParentID = ""
-	
-	parent := s.findBestParentAvoid(childID)
+
+	parent := s.findBestParentFor(child)
 	if parent == nil {
 		log.Printf("[Swarm] Could not reparent %s", childID)
 		return
@@ -157,7 +162,7 @@ func (s *SwarmTree) reparent(childID string) {
 		parent.Role = RoleRelay
 	}
 
-	backupParent := s.findBestParentAvoid(parent.ID)
+	backupParent := s.findBestParentFor(child, parent.ID)
 	if backupParent != nil {
 		child.BackupID = backupParent.ID
 	}
@@ -166,12 +171,16 @@ func (s *SwarmTree) reparent(childID string) {
 	s.notifyNewChild(parent, child)
 }
 
-// findBestParentAvoid selects the optimal parent for a new peer using:
-// 1. Geographic Proximity — peers in the same IP /16 subnet get priority
-//    (same ISP / same city = ~5-20ms RTT instead of 50-100ms)
-// 2. Shallowest depth — fewer hops = less cumulative latency
-// 3. Fewest children — load balancing
-func (s *SwarmTree) findBestParentAvoid(avoidID string) *Peer {
+// findBestParentFor selects the optimal parent for forPeer using:
+//  1. Geographic Proximity — peers in the same IP /16 subnet get priority
+//     (same ISP / same city = ~5-20ms RTT instead of 50-100ms)
+//  2. Shallowest depth — fewer hops = less cumulative latency
+//  3. Fewest children — load balancing
+//
+// forPeer is always excluded from the candidate set: a peer can never be its
+// own parent. Any additional ids in alsoAvoid are excluded too (used to keep
+// the backup parent distinct from the primary).
+func (s *SwarmTree) findBestParentFor(forPeer *Peer, alsoAvoid ...string) *Peer {
 	var best *Peer
 	var bestNearby *Peer
 	minChildren := MaxChildrenPerPeer
@@ -179,15 +188,24 @@ func (s *SwarmTree) findBestParentAvoid(avoidID string) *Peer {
 	nearbyMinChildren := MaxChildrenPerPeer
 	nearbyMinDepth := math.MaxInt32
 
-	// Get the new peer's IP prefix for geographic matching
-	newPeer, _ := s.peers[avoidID]
+	skip := make(map[string]bool, len(alsoAvoid)+1)
+	for _, id := range alsoAvoid {
+		if id != "" {
+			skip[id] = true
+		}
+	}
+
+	// Use the joining peer's own IP prefix for geographic matching. The previous
+	// implementation looked this up from the avoid-id, which is a different peer
+	// (or absent), so proximity routing never actually matched.
 	newPrefix := ""
-	if newPeer != nil {
-		newPrefix = ipPrefix(newPeer.IPAddr)
+	if forPeer != nil {
+		newPrefix = ipPrefix(forPeer.IPAddr)
+		skip[forPeer.ID] = true
 	}
 
 	for _, p := range s.peers {
-		if p.ID == avoidID {
+		if skip[p.ID] {
 			continue
 		}
 		// Mobile / Metered connections CANNOT be relay parents
@@ -324,7 +342,33 @@ func (s *SwarmTree) notifyParentChanged(child, parent, backup *Peer) {
 	}
 }
 
+// writeTimeout bounds how long a single WebSocket write may block.
+//
+// sendJSON is reached from paths that hold s.mu (AddPeer, BroadcastChunkManifest,
+// RelayChunkViaWs). Without a deadline, one client that completes the handshake
+// and then stops reading fills its kernel send buffer, the write blocks forever,
+// and every other peer is stalled behind the mutex — a single connection wedges
+// the whole tracker. A deadline turns that into a bounded stall plus an error on
+// the offending connection, which its read loop then cleans up.
+const writeTimeout = 5 * time.Second
+
+// SendTo writes a single message to one peer using the same serialised,
+// deadline-bounded path as every other tracker write.
+func (s *SwarmTree) SendTo(p *Peer, msg OutgoingMessage) {
+	s.sendJSON(p, msg)
+}
+
 func (s *SwarmTree) sendJSON(p *Peer, msg OutgoingMessage) {
+	if p == nil || p.Conn == nil {
+		return
+	}
+	// gorilla/websocket permits only one concurrent writer per connection.
+	p.writeMu.Lock()
+	defer p.writeMu.Unlock()
+
+	if dl, ok := p.Conn.(interface{ SetWriteDeadline(t time.Time) error }); ok {
+		_ = dl.SetWriteDeadline(time.Now().Add(writeTimeout))
+	}
 	if conn, ok := p.Conn.(interface{ WriteJSON(v interface{}) error }); ok {
 		_ = conn.WriteJSON(msg)
 	}
@@ -347,7 +391,8 @@ func (s *SwarmTree) BroadcastChunkManifest(msg IncomingMessage) {
 
 // RelayChunkViaWs relays video chunks through WebSocket when WebRTC DataChannel
 // is blocked by a firewall. The chunk travels:
-//   Publisher -> Tracker (WebSocket) -> Viewer Children (WebSocket)
+//
+//	Publisher -> Tracker (WebSocket) -> Viewer Children (WebSocket)
 //
 // To any ISP or DPI system, this traffic is indistinguishable from
 // regular HTTPS WebSocket traffic on port 443.

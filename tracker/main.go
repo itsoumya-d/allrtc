@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 package main
 
@@ -21,11 +21,18 @@ func main() {
 
 	swarm := NewSwarmTree()
 
-	// Peer health checker
+	// Peer health checker.
+	//
+	// staleTimeout must be a multiple of the client heartbeat interval.
+	// The SDK (sdk/src/tracker-client.ts, startHeartbeat) pings every 15s, so the
+	// previous 6s timeout evicted every peer at ~9s — before its first ping could
+	// ever arrive — while leaving the WebSocket open, so the peer never re-joined.
+	// 45s tolerates two missed heartbeats.
+	const staleTimeout = 45 * time.Second
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			swarm.CleanupStalePeers(6 * time.Second)
+			swarm.CleanupStalePeers(staleTimeout)
 		}
 	}()
 

@@ -34,8 +34,16 @@ declare class AllRTCViewer extends EventEmitter<ViewerEvents> {
     private assembler;
     private myId;
     private expectedHashes;
+    private static readonly MAX_EXPECTED_HASHES;
     canRelay: boolean;
     constructor(trackerUrl: string, streamId: string);
+    /**
+     * Record an expected chunk hash, bounding the map.
+     *
+     * Entries are otherwise deleted only when the matching chunk actually
+     * arrives, so manifests for chunks that never arrive accumulate forever.
+     */
+    private rememberExpectedHash;
     /**
      * Smart Device Tiering:
      * Protects mobile users from battery drain and mobile data usage.
@@ -51,6 +59,7 @@ interface ChunkMessage {
     ts: number;
     hash: string;
     data: ArrayBuffer;
+    from?: string;
 }
 type Role = 'publisher' | 'viewer';
 interface SignalMessage {

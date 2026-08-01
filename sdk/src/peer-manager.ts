@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 import { ChunkMessage } from './types';
 import { EventEmitter } from './events';
@@ -29,6 +29,13 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
   private keepaliveCtx: AudioContext | null = null;
   private webrtcBlocked = false;
   private connectionAttempts = new Map<string, number>();
+  /** Sequence numbers already put on the wire, used to break relay loops. */
+  private relayedSeqs = new Set<number>();
+  private static readonly MAX_RELAY_HISTORY = 1024;
+  /** Fixed width of the hash field in the binary chunk frame. */
+  private static readonly HASH_FIELD_BYTES = 64;
+  /** 4 bytes seq + 8 bytes timestamp + 64 bytes hash. */
+  private static readonly HEADER_BYTES = 76;
 
   constructor(private tracker: TrackerClient, private myId: string) {
     super();
@@ -208,18 +215,20 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     dc.binaryType = 'arraybuffer';
     dc.onmessage = (e) => {
       const buffer = e.data as ArrayBuffer;
-      if (buffer.byteLength < 76) return;
+      if (buffer.byteLength < PeerManager.HEADER_BYTES) return;
 
       const dv = new DataView(buffer);
       const seq = dv.getUint32(0);
       const ts = dv.getFloat64(4);
 
-      const hashBytes = new Uint8Array(buffer, 12, 64);
+      const hashBytes = new Uint8Array(buffer, 12, PeerManager.HASH_FIELD_BYTES);
       const hash = new TextDecoder().decode(hashBytes).trim();
 
-      const data = buffer.slice(76);
+      const data = buffer.slice(PeerManager.HEADER_BYTES);
 
-      this.emit('chunk', { seq, ts, hash, data });
+      // `from` lets the relay path avoid echoing a chunk straight back to the
+      // peer it arrived from.
+      this.emit('chunk', { seq, ts, hash, data, from: peerId });
     };
     this.dataChannels.set(peerId, dc);
   }
@@ -279,19 +288,43 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
   }
 
   broadcastChunk(chunk: ChunkMessage) {
-    const hashBytes = new TextEncoder().encode(chunk.hash.padEnd(64, ' '));
-    const buffer = new ArrayBuffer(4 + 8 + 64 + chunk.data.byteLength);
+    // Loop guard. A relay re-broadcasts every chunk it receives to all of its
+    // open DataChannels, including the one the chunk arrived on. With a
+    // bidirectional parent<->child pair that made a single chunk circulate
+    // without limit. Relay each sequence number at most once, and never echo a
+    // chunk back to the peer that sent it.
+    if (this.relayedSeqs.has(chunk.seq)) return;
+    this.relayedSeqs.add(chunk.seq);
+    if (this.relayedSeqs.size > PeerManager.MAX_RELAY_HISTORY) {
+      const oldest = this.relayedSeqs.values().next().value;
+      if (oldest !== undefined) this.relayedSeqs.delete(oldest);
+    }
+
+    const buffer = new ArrayBuffer(
+      PeerManager.HEADER_BYTES + chunk.data.byteLength
+    );
     const dv = new DataView(buffer);
 
     dv.setUint32(0, chunk.seq);
     dv.setFloat64(4, chunk.ts);
 
     const u8 = new Uint8Array(buffer);
-    u8.set(hashBytes, 12);
-    u8.set(new Uint8Array(chunk.data), 76);
+
+    // The hash occupies a fixed 64-byte slot. A peer-supplied hash can encode to
+    // MORE than 64 bytes (non-ASCII, or U+FFFD produced by decoding a malformed
+    // upstream frame), and `u8.set()` then threw RangeError out of the
+    // DataChannel onmessage handler — a remotely triggerable relay failure.
+    // Write into a fixed-size view so an oversized hash is truncated instead.
+    const hashField = u8.subarray(12, 12 + PeerManager.HASH_FIELD_BYTES);
+    hashField.fill(0x20); // space-pad, matching the .trim() on the read side
+    const encodedHash = new TextEncoder().encode(chunk.hash);
+    hashField.set(encodedHash.subarray(0, PeerManager.HASH_FIELD_BYTES));
+
+    u8.set(new Uint8Array(chunk.data), PeerManager.HEADER_BYTES);
 
     let sent = false;
-    for (const dc of this.dataChannels.values()) {
+    for (const [peerId, dc] of this.dataChannels) {
+      if (peerId === chunk.from) continue; // never echo back to the sender
       if (dc.readyState === 'open') {
         try {
           dc.send(buffer);

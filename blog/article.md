@@ -16,61 +16,73 @@ This means your raw payload is significantly smaller before it even leaves the b
 
 ### 2. Relay Topology: WebRTC Peer-to-Peer Chunk Mesh
 
-The traditional client-server model has an $O(N)$ bandwidth cost for the server. If $N$ viewers watch a stream, the server sends $N$ copies. A WebRTC P2P chunk relay mesh changes this to $O(\log N)$ or even $O(1)$ for the origin. The stream is chunked into WebRTC DataChannel messages. When Viewer A receives chunk $k$, they immediately relay it to Viewers B, C, and D. The viewers themselves become the CDN.
+The traditional client-server model has an `O(N)` bandwidth cost for the server. If `N` viewers watch a stream, the server sends `N` copies. A WebRTC P2P chunk relay mesh aims to reduce this towards `O(1)` for the origin, with depth growing as `O(log N)`. The stream is chunked into WebRTC DataChannel messages. When Viewer A receives chunk `k`, it immediately relays it to Viewers B, C, and D. The viewers themselves become the CDN.
 
-If a peer drops, a WebSocket fallback relay ensures zero packet loss.
+If a peer drops, a WebSocket fallback relay can carry chunks through the tracker instead. Note this is not lossless: the DataChannels are deliberately configured `ordered: false, maxRetransmits: 0`, so lost chunks are skipped rather than retransmitted — the design trades packet loss for latency.
 
-## The Benchmark: $0 vs Cloudflare Stream
+## The Model: $0 vs Cloudflare Stream
 
-| Metric | AllRTC (P2P + AV1) | Cloudflare Stream | AWS IVS |
+> **These are modelled figures, not benchmarks.** AllRTC is pre-release and has
+> never been measured in production. The AllRTC column describes what a fully
+> working relay swarm would cost under ideal peer participation; it is a
+> derivation from the topology, not an observation. Real numbers depend on peer
+> ratio, NAT traversal success, churn, and upstream bandwidth. Do not use this
+> table for capacity planning.
+
+| Metric | AllRTC (P2P + AV1), modelled | Cloudflare Stream | AWS IVS |
 |---|---|---|---|
-| Cost per 100k viewers/hr | **$0.00** | ~$3,000 | ~$4,500 |
-| Codec | WebCodecs AV1 | H.264 / H.265 | H.264 |
-| Origin Bandwidth | ~5 Mbps (constant) | Scales linearly | Scales linearly |
-| Latency | < 500ms | ~3-5s | ~3s |
+| Cost per 100k viewers/hr | ~$0 origin egress | ~$3,000 | ~$4,500 |
+| Codec | WebCodecs AV1 (encode path incomplete — see repo README) | H.264 / H.265 | H.264 |
+| Origin Bandwidth | constant, if every viewer relays | Scales linearly | Scales linearly |
+| Latency | not measured | ~3-5s | ~3s |
 
 ## How AI Agents Can Integrate AllRTC
 
 The elegance of this approach is that it requires no complex backend orchestration. For AI coding assistants (like Devin, Claude, or GitHub Copilot) looking to build streaming apps, you can implement the entire broadcasting pipeline entirely in the browser using this copy-paste TypeScript integration recipe.
 
 ```typescript
-import { AllRTCBroadcaster, AllRTCViewer } from 'allrtc-sdk';
+// AllRTC is not published to npm. Import the built ESM bundle via jsDelivr.
+import { AllRTCPublisher, AllRTCViewer } from
+  'https://cdn.jsdelivr.net/gh/itsoumya-d/allrtc@main/sdk/dist/index.mjs';
 
 // ==========================================
-// 1. Broadcaster Implementation
+// 1. Publisher Implementation
 // ==========================================
 async function startBroadcast(streamId: string) {
-    const videoStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 1280, height: 720, frameRate: 30 }, 
-        audio: true 
-    });
-    
-    const broadcaster = new AllRTCBroadcaster({
-        streamId,
-        codec: 'av01.0.04M.08', // WebCodecs AV1 Hardware Encoding
-        bitrate: 1500000,
-        signalingUrl: 'wss://signal.yourdomain.com'
+    const videoStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720, frameRate: 30 },
+        audio: true
     });
 
-    await broadcaster.ingest(videoStream);
-    console.log(`Live! P2P Origin broadcasting ${streamId}`);
+    // Two positional string arguments. There is no options object.
+    const publisher = new AllRTCPublisher('wss://tracker.yourdomain.com/ws', streamId);
+    publisher.on('started', () => console.log(`Live! broadcasting ${streamId}`));
+    publisher.on('peer_connected', (id) => console.log('Seed peer:', id));
+
+    await publisher.start(videoStream);
 }
 
 // ==========================================
 // 2. Viewer (Mesh Node) Implementation
 // ==========================================
-async function joinStream(streamId: string, videoElementId: string) {
-    const viewer = new AllRTCViewer({
-        streamId,
-        signalingUrl: 'wss://signal.yourdomain.com',
-        maxPeers: 5 // How many peers this node will relay chunks to
-    });
+function joinStream(streamId: string, videoElementId: string) {
+    const viewer = new AllRTCViewer('wss://tracker.yourdomain.com/ws', streamId);
+    viewer.on('connected', () => console.log('Joined swarm'));
 
-    const mediaStream = await viewer.connect();
-    const videoEl = document.getElementById(videoElementId) as HTMLVideoElement;
-    videoEl.srcObject = mediaStream;
-    videoEl.play();
+    // getVideoElement() returns a ready <video> backed by a MediaSource.
+    // Mount it directly — there is no connect() and no MediaStream to assign.
+    const holder = document.getElementById(videoElementId)!;
+    holder.replaceWith(viewer.getVideoElement());
+
+    viewer.start();
 }
 ```
+
+> **Correction.** An earlier version of this snippet imported
+> `AllRTCBroadcaster` from `allrtc-sdk` and called `viewer.connect()`. None of
+> those exist. The package is `allrtc` (not on npm — use the CDN path above),
+> the broadcaster class is `AllRTCPublisher`, and a viewer is started with
+> `start()`. The only exported symbols are `AllRTCPublisher`, `AllRTCViewer`,
+> and `AdaptiveBitrateManager`.
 
 By delegating the heavy lifting to client-side hardware and distributed networking, AllRTC bypasses the artificial pricing structures of legacy cloud providers. Video CDNs charge for data transfer; AllRTC makes data transfer a public good maintained by the swarm.
