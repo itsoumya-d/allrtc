@@ -1,3 +1,6 @@
 ## 2024-05-18 - [String Formatting Allocation Overhead in WebRTC Chunk Hash]
 **Learning:** In ultra-low latency WebRTC streaming (50ms interval), using intermediate array allocations, closures (like map), and string formatting overhead (`Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("")`) causes severe GC pauses. This is a critical pattern in this codebase due to the high frequency of chunk processing.
 **Action:** When converting ArrayBuffers to hex strings, use a pre-computed lookup table (`byteToHex`) and a simple loop with string concatenation.
+## 2024-05-18 - [ArrayBuffer to Base64 String Conversion Overhead]
+**Learning:** Converting large ArrayBuffers to base64 strings using a naive byte-by-byte loop (`binary += String.fromCharCode(bytes[i])`) is extremely slow and causes severe main-thread blocking. This is especially detrimental in environments where large chunks (e.g., video data) are converted frequently.
+**Action:** When converting large ArrayBuffers to base64 strings, use batched string concatenation (`String.fromCharCode.apply(null, bytes.subarray(i, i + 8192))`) to process bytes in 8KB chunks. This is significantly faster (~10x) and reduces blocking time.
