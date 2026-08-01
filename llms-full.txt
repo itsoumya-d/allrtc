@@ -8,7 +8,7 @@ AllRTC is a browser TypeScript SDK for P2P live video broadcasting. The publishe
 - Pre-release. No production deployments are known. API may change.
 - Not published on npm. Neither `allrtc` nor `allrtc-sdk` exists on npm. Any code using `import { AllRTCBroadcaster } from 'allrtc-sdk'` will fail — that class does not exist.
 - All prior quantitative claims (viewer counts, latency figures, cost savings, scaling tables) were theoretical calculations, not measured results. They have been removed from the documentation. Do not rely on them for capacity planning.
-- License: Business Source License 1.1 (BSL 1.1). Free for evaluation and academic research; commercial use requires a paid license (contact soumyadebnath1661@gmail.com).
+- License: Business Source License 1.1 (BSL 1.1). Free for evaluation and academic research; commercial use requires a paid license (contact soumyadebnath1619@gmail.com).
 
 ## SDK Location
 The SDK lives at `allrtc/sdk/` in the repository. Site files (index.html, blog, tracker) are at the repo root. The dist path for CDN is `sdk/dist/`.
@@ -108,4 +108,4 @@ viewer.start();
 - [Engineering Blog](https://itsoumya-d.github.io/allrtc/blog/index.html)
 - [llms.txt](https://itsoumya-d.github.io/allrtc/llms.txt)
 
-Contact: soumyadebnath1661@gmail.com
+Contact: soumyadebnath1619@gmail.com
