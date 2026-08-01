@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 import { TrackerMessage } from './types';
 import { EventEmitter } from './events';
@@ -11,6 +11,8 @@ interface TrackerEvents {
   message: TrackerMessage;
   close: void;
   error: Event;
+  /** Emitted once when every reconnect attempt has been used up. */
+  exhausted: void;
 }
 
 /**
@@ -33,7 +35,11 @@ export class TrackerClient extends EventEmitter<TrackerEvents> {
   constructor(
     private url: string,
     private role: 'publisher' | 'viewer',
-    private streamId: string
+    private streamId: string,
+    /** This peer's id. The tracker only registers a peer on a `join` message. */
+    private peerId: string = '',
+    /** Whether this peer may act as a relay parent for other viewers. */
+    private canRelay: boolean = true
   ) {
     super();
   }
@@ -55,6 +61,18 @@ export class TrackerClient extends EventEmitter<TrackerEvents> {
 
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;
+      // The tracker registers a peer ONLY in its `case "join"` branch
+      // (tracker/handler.go). Without this the socket connects, stays open, and
+      // the peer is never added to the swarm — no parent assignment, no
+      // signalling, no stream. This must be sent on every (re)connect.
+      if (this.peerId) {
+        this.send({
+          type: 'join',
+          peerId: this.peerId,
+          role: this.role,
+          canRelay: this.canRelay,
+        });
+      }
       this.startHeartbeat();
       this.emit('open', undefined);
     };
@@ -85,7 +103,12 @@ export class TrackerClient extends EventEmitter<TrackerEvents> {
    * Starts at 500ms, doubles each attempt, caps at 30 seconds.
    */
   private scheduleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      // Previously this returned silently, so a permanently unreachable tracker
+      // produced no observable signal at all — the caller waited forever.
+      this.emit('exhausted', undefined);
+      return;
+    }
     const delay = Math.min(500 * Math.pow(2, this.reconnectAttempts), 30000);
     this.reconnectAttempts++;
     this.reconnectTimer = setTimeout(() => this.doConnect(), delay);
@@ -97,7 +120,7 @@ export class TrackerClient extends EventEmitter<TrackerEvents> {
    */
   private startHeartbeat() {
     this.heartbeatTimer = setInterval(() => {
-      this.send({ type: 'ping', peerId: '' });
+      this.send({ type: 'ping', peerId: this.peerId });
     }, 15000);
   }
 

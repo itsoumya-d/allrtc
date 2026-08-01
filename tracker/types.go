@@ -1,9 +1,11 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 package main
+
+import "sync"
 
 type Role string
 
@@ -15,16 +17,21 @@ const (
 )
 
 type Peer struct {
-	ID        string   `json:"id"`
-	Role      Role     `json:"role"`
-	ParentID  string   `json:"parentId"`
-	BackupID  string   `json:"backupId"`
-	ChildIDs  []string `json:"childIds"`
-	Depth     int      `json:"depth"`
-	CanRelay  bool     `json:"canRelay"`
-	IPAddr    string   `json:"ipAddr"` // Client IP for geographic proximity routing
-	LastPing  int64    `json:"lastPing"`
-	Conn      any      `json:"-"`
+	ID       string   `json:"id"`
+	Role     Role     `json:"role"`
+	ParentID string   `json:"parentId"`
+	BackupID string   `json:"backupId"`
+	ChildIDs []string `json:"childIds"`
+	Depth    int      `json:"depth"`
+	CanRelay bool     `json:"canRelay"`
+	IPAddr   string   `json:"ipAddr"` // Client IP for geographic proximity routing
+	LastPing int64    `json:"lastPing"`
+	Conn     any      `json:"-"`
+
+	// writeMu serialises writes to Conn. gorilla/websocket allows at most one
+	// concurrent writer per connection; the swarm writes to a peer from several
+	// goroutines (its own read loop, other peers' read loops, the cleanup timer).
+	writeMu sync.Mutex
 }
 
 type IncomingMessage struct {
@@ -43,6 +50,7 @@ type IncomingMessage struct {
 
 type OutgoingMessage struct {
 	Type            string   `json:"type"`
+	To              string   `json:"to,omitempty"`
 	ParentPeerID    string   `json:"parentPeerId,omitempty"`
 	BackupPeerID    string   `json:"backupPeerId,omitempty"`
 	ChildPeerID     string   `json:"childPeerId,omitempty"`

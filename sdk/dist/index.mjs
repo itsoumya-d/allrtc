@@ -25,11 +25,13 @@ var EventEmitter = class {
 
 // src/tracker-client.ts
 var TrackerClient = class extends EventEmitter {
-  constructor(url, role, streamId) {
+  constructor(url, role, streamId, peerId = "", canRelay = true) {
     super();
     this.url = url;
     this.role = role;
     this.streamId = streamId;
+    this.peerId = peerId;
+    this.canRelay = canRelay;
     this.ws = null;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 50;
@@ -52,6 +54,14 @@ var TrackerClient = class extends EventEmitter {
     }
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;
+      if (this.peerId) {
+        this.send({
+          type: "join",
+          peerId: this.peerId,
+          role: this.role,
+          canRelay: this.canRelay
+        });
+      }
       this.startHeartbeat();
       this.emit("open", void 0);
     };
@@ -79,7 +89,10 @@ var TrackerClient = class extends EventEmitter {
    * Starts at 500ms, doubles each attempt, caps at 30 seconds.
    */
   scheduleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.emit("exhausted", void 0);
+      return;
+    }
     const delay = Math.min(500 * Math.pow(2, this.reconnectAttempts), 3e4);
     this.reconnectAttempts++;
     this.reconnectTimer = setTimeout(() => this.doConnect(), delay);
@@ -90,7 +103,7 @@ var TrackerClient = class extends EventEmitter {
    */
   startHeartbeat() {
     this.heartbeatTimer = setInterval(() => {
-      this.send({ type: "ping", peerId: "" });
+      this.send({ type: "ping", peerId: this.peerId });
     }, 15e3);
   }
   stopHeartbeat() {
@@ -139,7 +152,7 @@ var TrackerClient = class extends EventEmitter {
 };
 
 // src/peer-manager.ts
-var PeerManager = class extends EventEmitter {
+var _PeerManager = class _PeerManager extends EventEmitter {
   constructor(tracker, myId) {
     super();
     this.tracker = tracker;
@@ -149,6 +162,8 @@ var PeerManager = class extends EventEmitter {
     this.keepaliveCtx = null;
     this.webrtcBlocked = false;
     this.connectionAttempts = /* @__PURE__ */ new Map();
+    /** Sequence numbers already put on the wire, used to break relay loops. */
+    this.relayedSeqs = /* @__PURE__ */ new Set();
     this.tracker.on("message", (msg) => {
       if (msg.type === "signal" && msg.to === this.myId) {
         this.handleSignal(msg.from, msg.payload);
@@ -294,14 +309,14 @@ var PeerManager = class extends EventEmitter {
     dc.binaryType = "arraybuffer";
     dc.onmessage = (e) => {
       const buffer = e.data;
-      if (buffer.byteLength < 76) return;
+      if (buffer.byteLength < _PeerManager.HEADER_BYTES) return;
       const dv = new DataView(buffer);
       const seq = dv.getUint32(0);
       const ts = dv.getFloat64(4);
-      const hashBytes = new Uint8Array(buffer, 12, 64);
+      const hashBytes = new Uint8Array(buffer, 12, _PeerManager.HASH_FIELD_BYTES);
       const hash = new TextDecoder().decode(hashBytes).trim();
-      const data = buffer.slice(76);
-      this.emit("chunk", { seq, ts, hash, data });
+      const data = buffer.slice(_PeerManager.HEADER_BYTES);
+      this.emit("chunk", { seq, ts, hash, data, from: peerId });
     };
     this.dataChannels.set(peerId, dc);
   }
@@ -357,16 +372,27 @@ var PeerManager = class extends EventEmitter {
     return this.webrtcBlocked;
   }
   broadcastChunk(chunk) {
-    const hashBytes = new TextEncoder().encode(chunk.hash.padEnd(64, " "));
-    const buffer = new ArrayBuffer(4 + 8 + 64 + chunk.data.byteLength);
+    if (this.relayedSeqs.has(chunk.seq)) return;
+    this.relayedSeqs.add(chunk.seq);
+    if (this.relayedSeqs.size > _PeerManager.MAX_RELAY_HISTORY) {
+      const oldest = this.relayedSeqs.values().next().value;
+      if (oldest !== void 0) this.relayedSeqs.delete(oldest);
+    }
+    const buffer = new ArrayBuffer(
+      _PeerManager.HEADER_BYTES + chunk.data.byteLength
+    );
     const dv = new DataView(buffer);
     dv.setUint32(0, chunk.seq);
     dv.setFloat64(4, chunk.ts);
     const u8 = new Uint8Array(buffer);
-    u8.set(hashBytes, 12);
-    u8.set(new Uint8Array(chunk.data), 76);
+    const hashField = u8.subarray(12, 12 + _PeerManager.HASH_FIELD_BYTES);
+    hashField.fill(32);
+    const encodedHash = new TextEncoder().encode(chunk.hash);
+    hashField.set(encodedHash.subarray(0, _PeerManager.HASH_FIELD_BYTES));
+    u8.set(new Uint8Array(chunk.data), _PeerManager.HEADER_BYTES);
     let sent = false;
-    for (const dc of this.dataChannels.values()) {
+    for (const [peerId, dc] of this.dataChannels) {
+      if (peerId === chunk.from) continue;
       if (dc.readyState === "open") {
         try {
           dc.send(buffer);
@@ -388,6 +414,12 @@ var PeerManager = class extends EventEmitter {
     this.dataChannels.clear();
   }
 };
+_PeerManager.MAX_RELAY_HISTORY = 1024;
+/** Fixed width of the hash field in the binary chunk frame. */
+_PeerManager.HASH_FIELD_BYTES = 64;
+/** 4 bytes seq + 8 bytes timestamp + 64 bytes hash. */
+_PeerManager.HEADER_BYTES = 76;
+var PeerManager = _PeerManager;
 
 // src/chunk-hasher.ts
 var byteToHex = [];
@@ -546,11 +578,20 @@ var AllRTCPublisher = class extends EventEmitter {
     this.streamId = streamId;
     this.encoder = null;
     this.myId = "pub_" + Math.random().toString(36).substring(2, 9);
-    this.tracker = new TrackerClient(trackerUrl, "publisher", streamId);
+    this.tracker = new TrackerClient(
+      trackerUrl,
+      "publisher",
+      streamId,
+      this.myId,
+      true
+    );
     this.peerManager = new PeerManager(this.tracker, this.myId);
     this.tracker.on("message", (msg) => {
       if (msg.type === "new_child") {
-        this.peerManager.connectToPeer(msg.childId);
+        const childId = msg.childPeerId || msg.childId;
+        if (childId) {
+          this.peerManager.connectToPeer(childId);
+        }
       }
     });
     this.peerManager.on("connected", (peerId) => {
@@ -653,19 +694,27 @@ async function verifyChunk(data, expectedHash) {
 }
 
 // src/viewer.ts
-var AllRTCViewer = class extends EventEmitter {
+var _AllRTCViewer = class _AllRTCViewer extends EventEmitter {
   constructor(trackerUrl, streamId) {
     super();
     this.expectedHashes = /* @__PURE__ */ new Map();
     this.canRelay = true;
     this.myId = "view_" + Math.random().toString(36).substring(2, 9);
     this.detectDeviceCapabilities();
-    this.tracker = new TrackerClient(trackerUrl, "viewer", streamId);
+    this.tracker = new TrackerClient(
+      trackerUrl,
+      "viewer",
+      streamId,
+      this.myId,
+      this.canRelay
+    );
     this.peerManager = new PeerManager(this.tracker, this.myId);
     this.assembler = new VideoAssembler();
+    this.tracker.on("open", () => this.emit("connected", void 0));
+    this.tracker.on("close", () => this.emit("disconnected", void 0));
     this.tracker.on("message", (msg) => {
       if (msg.type === "manifest") {
-        this.expectedHashes.set(msg.seq, msg.hash);
+        this.rememberExpectedHash(msg.seq, msg.hash);
       } else if (msg.type === "assigned") {
         if (msg.parentPeerId) {
           this.peerManager.connectToPeer(msg.parentPeerId);
@@ -674,8 +723,9 @@ var AllRTCViewer = class extends EventEmitter {
           this.peerManager.connectToPeer(msg.backupPeerId);
         }
       } else if (msg.type === "new_child") {
-        if (this.canRelay && msg.childId) {
-          this.peerManager.connectToPeer(msg.childId);
+        const childId = msg.childPeerId || msg.childId;
+        if (this.canRelay && childId) {
+          this.peerManager.connectToPeer(childId);
         }
       } else if (msg.type === "parent_changed") {
         if (msg.newParentPeerId) {
@@ -698,6 +748,21 @@ var AllRTCViewer = class extends EventEmitter {
         });
       }
     });
+  }
+  /**
+   * Record an expected chunk hash, bounding the map.
+   *
+   * Entries are otherwise deleted only when the matching chunk actually
+   * arrives, so manifests for chunks that never arrive accumulate forever.
+   */
+  rememberExpectedHash(seq, hash) {
+    if (typeof seq !== "number" || typeof hash !== "string") return;
+    this.expectedHashes.set(seq, hash);
+    while (this.expectedHashes.size > _AllRTCViewer.MAX_EXPECTED_HASHES) {
+      const oldest = this.expectedHashes.keys().next().value;
+      if (oldest === void 0) break;
+      this.expectedHashes.delete(oldest);
+    }
   }
   /**
    * Smart Device Tiering:
@@ -729,6 +794,8 @@ var AllRTCViewer = class extends EventEmitter {
     this.tracker.disconnect();
   }
 };
+_AllRTCViewer.MAX_EXPECTED_HASHES = 2048;
+var AllRTCViewer = _AllRTCViewer;
 
 // src/adaptive-bitrate.ts
 var AdaptiveBitrateManager = class {

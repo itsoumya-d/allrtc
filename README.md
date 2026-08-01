@@ -73,8 +73,7 @@ AllRTC is designed around minimizing end-to-end latency through:
 1. **WebRTC DataChannels (UDP):** Bypasses TCP head-of-line blocking. Packets arrive out-of-order and are reassembled.
 2. **Zero-Delay Forwarding:** A viewer relays a chunk as soon as it arrives, before hash verification. Verification happens asynchronously.
 3. **No Chunk Buffering:** Unlike HLS which waits for a multi-second `.ts` file, AllRTC forwards individual micro-chunks continuously.
-4. **WebWorker Offloading:** Encryption and chunking run in a WebWorker, keeping the main UI thread free.
-5. **Unordered DataChannels:** Configured `ordered: false, maxRetransmits: 0` — lost chunks are dropped rather than causing head-of-line blocking.
+4. **Unordered DataChannels:** Configured `ordered: false, maxRetransmits: 0` — lost chunks are dropped rather than causing head-of-line blocking.
 
 **Actual measured latency in your deployment depends on network conditions, geographic distribution, NAT traversal success, and hardware. No benchmarks have been run.**
 
@@ -82,9 +81,13 @@ AllRTC is designed around minimizing end-to-end latency through:
 
 ## AV1 Video Encoding & Adaptive Bitrate
 
-AllRTC is designed to use the WebCodecs API (`VideoEncoder`, `VideoDecoder`) for direct encoding, and supports AV1 codec configuration (`av01.0.05M.08`). WebCodecs AV1 hardware acceleration availability varies by browser and platform.
+The publisher's `ChunkEncoder` tries `VideoEncoder` (WebCodecs) with the AV1 codec string `av01.0.04M.08`, falls back to `avc1.42E01E` (H.264) if `isConfigSupported()` rejects AV1, and falls back to `MediaRecorder` with `video/webm; codecs="vp8,opus"` if WebCodecs is unavailable. WebCodecs AV1 hardware acceleration availability varies by browser and platform.
 
-The `AdaptiveBitrateManager` class monitors DataChannel conditions per peer and adjusts encoding parameters. It is exported from the SDK and used by the publisher internally.
+**The decode side does not currently match the WebCodecs encode side.** `VideoDecoder` is not used anywhere in the SDK. Playback goes through `VideoAssembler`, which appends chunks to a MediaSource `SourceBuffer` hard-coded to `video/webm; codecs="vp8,opus"`, and there is no muxer in the repository — so raw AV1 `EncodedVideoChunk` bytes are never wrapped in a container that SourceBuffer can accept. In practice only the `MediaRecorder` (VP8/WebM) path produces playable output today; the WebCodecs/AV1 path is incomplete.
+
+`ChunkEncoder` is also not exported from the package, so a consumer cannot set the codec, mimeType, or `useWebCodecs`.
+
+The `AdaptiveBitrateManager` class maps a bandwidth estimate onto quality tiers. It is exported from the SDK, but nothing inside the SDK instantiates it — the publisher, viewer, and peer manager never call it. It is a standalone utility you must wire up yourself.
 
 ### Research Foundation
 > W3C WebCodecs Working Group & Alliance for Open Media (AOMedia) (2023). *WebCodecs API Specification & AV1 Video Codec Specification for Real-Time Communications*. [w3.org/TR/webcodecs/](https://www.w3.org/TR/webcodecs/)
@@ -97,9 +100,9 @@ The `AdaptiveBitrateManager` class monitors DataChannel conditions per peer and 
 2. **Mobile Battery / Data:** Smart Device Tiering. Mobile phones or metered connections are assigned as "Leaves" only — they receive video but do not relay.
 3. **WebRTC Blocking:** WebSocket Relay Fallback. If corporate firewalls block WebRTC UDP, AllRTC falls back to relaying video chunks through the tracker's WebSocket connection (port 443).
 4. **Network Switching:** ICE Restarts. Moving from WiFi to 4G triggers `performIceRestart()`, which renegotiates ICE candidates without tearing down the peer connection.
-5. **Data Integrity:** Async SHA-256 Signatures. The publisher signs chunks; viewers verify hashes asynchronously and drop connections from peers sending bad data.
+5. **Data Integrity:** Async SHA-256 hashing. The publisher computes an unkeyed SHA-256 per chunk (a hash, not a signature — there is no key and no signing), and viewers compare it asynchronously. On mismatch the viewer logs a `console.warn` only; it does not drop the peer or notify children. `ReputationManager` in `security.ts` exists but is never instantiated. **Verification is also not reachable end to end today:** the publisher emits `{type:"manifest"}`, which the tracker's message switch has no case for, so the manifest is dropped and viewers never learn the expected hash. See Known Limitations.
 6. **Background Tab Throttling:** A silent `AudioContext` oscillator (gain = 0) prevents the browser from sleeping inactive tabs.
-7. **Tracker Bottleneck:** The tracker handles signaling only (`offer`/`answer`/`ice`) and never touches media data. A small server can handle a large swarm for signaling.
+7. **Tracker Bottleneck:** The tracker handles signaling and topology. It normally does not touch media, but the WebSocket fallback path (`ws_chunk_relay`) does route base64-encoded video chunks through the tracker, so under fallback it is on the media path.
 
 ---
 
@@ -202,19 +205,34 @@ tls-listening-port=443
 ## Security Model
 
 - **Transport:** WebRTC DataChannels are encrypted via DTLS. Tracker connections use WSS (TLS).
-- **Data Integrity:** The publisher generates a SHA-256 hash for every chunk. Viewers verify hashes asynchronously to detect relay tampering.
-- **Access Control:** The tracker supports session tokens to prevent unauthorized viewing.
+- **Data Integrity:** The publisher computes a SHA-256 hash for every chunk. Viewers compare hashes asynchronously *after* forwarding. This is an unkeyed hash, not a signature: any peer that can inject a chunk can also compute a matching hash for it. It detects corruption, not a motivated attacker.
+- **Access Control: none.** The tracker has no authentication of any kind — no tokens, no origin check (`CheckOrigin` returns `true` for every request), and no authorization on message types. Any client can join a swarm, declare itself the publisher (`role: "publisher"` is taken on trust), or broadcast a `chunk_manifest` to every other peer. Do not expose the tracker publicly without putting your own authenticating proxy in front of it.
+- **Stream isolation: none.** The tracker creates a single global `SwarmTree` and never reads the `streamId` query parameter, so peers from different streams are placed in the same swarm and can be assigned each other as parents.
 
 ---
 
 ## Configuration Options
 
+There is no options object. Both constructors take exactly two string arguments:
+
 ```typescript
-const viewer = new AllRTCViewer(trackerUrl, streamId, {
-    maxChildren: 8,           // Fan-out branching factor
-    allowMobileRelay: false,  // Force false to save mobile battery
-    webrtcTimeoutMs: 8000,    // Fallback to WS after 8s
-});
+new AllRTCPublisher(trackerUrl: string, streamId: string)
+new AllRTCViewer(trackerUrl: string, streamId: string)
+```
+
+A third argument is silently ignored, so anything you pass in one has no effect.
+The values that used to be documented here are compile-time constants today:
+
+| Setting | Where it actually lives | Value |
+| :--- | :--- | :--- |
+| Fan-out branching factor | `MaxChildrenPerPeer` in `tracker/swarm.go` | `8` |
+| Relay opt-out | `viewer.canRelay` — a public property you may set after construction; auto-set to `false` for mobile/metered user agents | `true` on desktop |
+| WebRTC blocked timeout | hard-coded in `peer-manager.ts` `connectToPeer()` | `8000` ms |
+| Chunk interval | `ChunkEncoder.start(cb, chunkTimeMs)`, not reachable from the public API | `50` ms |
+
+```typescript
+const viewer = new AllRTCViewer(trackerUrl, streamId);
+viewer.canRelay = false; // opt this viewer out of relaying
 ```
 
 ---

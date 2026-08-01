@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 import { TrackerClient } from './tracker-client';
 import { PeerManager } from './peer-manager';
@@ -23,12 +23,24 @@ export class AllRTCPublisher extends EventEmitter<PublisherEvents> {
   constructor(trackerUrl: string, private streamId: string) {
     super();
     this.myId = 'pub_' + Math.random().toString(36).substring(2, 9);
-    this.tracker = new TrackerClient(trackerUrl, 'publisher', streamId);
+    this.tracker = new TrackerClient(
+      trackerUrl,
+      'publisher',
+      streamId,
+      this.myId,
+      true
+    );
     this.peerManager = new PeerManager(this.tracker, this.myId);
 
     this.tracker.on('message', (msg) => {
       if (msg.type === 'new_child') {
-        this.peerManager.connectToPeer(msg.childId);
+        // The tracker sends `childPeerId` (tracker/types.go OutgoingMessage);
+        // reading only `childId` dropped every notification, so the publisher
+        // never dialled its seed peers.
+        const childId = msg.childPeerId || msg.childId;
+        if (childId) {
+          this.peerManager.connectToPeer(childId);
+        }
       }
     });
 

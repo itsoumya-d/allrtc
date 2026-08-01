@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 import { TrackerClient } from './tracker-client';
 import { PeerManager } from './peer-manager';
@@ -23,6 +23,7 @@ export class AllRTCViewer extends EventEmitter<ViewerEvents> {
   private assembler: VideoAssembler;
   private myId: string;
   private expectedHashes = new Map<number, string>();
+  private static readonly MAX_EXPECTED_HASHES = 2048;
   public canRelay: boolean = true;
 
   constructor(trackerUrl: string, streamId: string) {
@@ -32,13 +33,25 @@ export class AllRTCViewer extends EventEmitter<ViewerEvents> {
     // Auto-detect Network Connection & Battery State
     this.detectDeviceCapabilities();
 
-    this.tracker = new TrackerClient(trackerUrl, 'viewer', streamId);
+    this.tracker = new TrackerClient(
+      trackerUrl,
+      'viewer',
+      streamId,
+      this.myId,
+      this.canRelay
+    );
     this.peerManager = new PeerManager(this.tracker, this.myId);
     this.assembler = new VideoAssembler();
 
+    // Surface the connection lifecycle. These are the events the public API
+    // documents, but nothing ever emitted them, so an unreachable tracker was
+    // completely silent to the caller.
+    this.tracker.on('open', () => this.emit('connected', undefined));
+    this.tracker.on('close', () => this.emit('disconnected', undefined));
+
     this.tracker.on('message', (msg) => {
       if (msg.type === 'manifest') {
-        this.expectedHashes.set(msg.seq, msg.hash);
+        this.rememberExpectedHash(msg.seq, msg.hash);
       } else if (msg.type === 'assigned') {
         // Connect to Primary Parent
         if (msg.parentPeerId) {
@@ -49,9 +62,13 @@ export class AllRTCViewer extends EventEmitter<ViewerEvents> {
           this.peerManager.connectToPeer(msg.backupPeerId);
         }
       } else if (msg.type === 'new_child') {
+        // The tracker sends `childPeerId` (tracker/types.go OutgoingMessage).
+        // Reading only `childId` meant every new_child notification was dropped
+        // and relay parents never dialled their children.
+        const childId = msg.childPeerId || msg.childId;
         // Only accept children if on unmetered connection / desktop
-        if (this.canRelay && msg.childId) {
-          this.peerManager.connectToPeer(msg.childId);
+        if (this.canRelay && childId) {
+          this.peerManager.connectToPeer(childId);
         }
       } else if (msg.type === 'parent_changed') {
         if (msg.newParentPeerId) {
@@ -92,6 +109,22 @@ export class AllRTCViewer extends EventEmitter<ViewerEvents> {
         });
       }
     });
+  }
+
+  /**
+   * Record an expected chunk hash, bounding the map.
+   *
+   * Entries are otherwise deleted only when the matching chunk actually
+   * arrives, so manifests for chunks that never arrive accumulate forever.
+   */
+  private rememberExpectedHash(seq: number, hash: string) {
+    if (typeof seq !== 'number' || typeof hash !== 'string') return;
+    this.expectedHashes.set(seq, hash);
+    while (this.expectedHashes.size > AllRTCViewer.MAX_EXPECTED_HASHES) {
+      const oldest = this.expectedHashes.keys().next().value;
+      if (oldest === undefined) break;
+      this.expectedHashes.delete(oldest);
+    }
   }
 
   /**

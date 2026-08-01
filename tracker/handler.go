@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2026 Soumya Debnath. All Rights Reserved.
 // Licensed under the Business Source License 1.1 (BSL 1.1).
 // See LICENSE file for details. Production use requires a paid license.
-// Contact: soumyadebnath1661@gmail.com | +91 7031648617
+// Contact: soumyadebnath1661@gmail.com
 
 package main
 
@@ -14,6 +14,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// maxMessageBytes caps a single inbound WebSocket message. Without it,
+// conn.ReadJSON will buffer an arbitrarily large frame into memory — a 32 MB
+// frame from one unauthenticated client is accepted today. 1 MiB is well above
+// a base64-encoded video micro-chunk.
+const maxMessageBytes = 1 << 20
+
+// NOTE: CheckOrigin always returns true, so any website can open a WebSocket to
+// this tracker on a visitor's behalf, and the protocol has no authentication at
+// all. Restrict this to your own origins (and add a join token) before exposing
+// the tracker publicly.
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 	// Increase buffer sizes for chunk relay
@@ -27,6 +37,8 @@ func handleWebSocket(swarm *SwarmTree, w http.ResponseWriter, r *http.Request) {
 		log.Println("Upgrade error:", err)
 		return
 	}
+
+	conn.SetReadLimit(maxMessageBytes)
 
 	// Extract client IP for geographic proximity routing
 	clientIP := r.Header.Get("X-Forwarded-For")
@@ -60,6 +72,13 @@ func handleWebSocket(swarm *SwarmTree, w http.ResponseWriter, r *http.Request) {
 
 		switch msg.Type {
 		case "join":
+			// An empty peer id can never be removed on disconnect (the deferred
+			// cleanup below is guarded by peerID != ""), so it leaks a swarm slot
+			// permanently. Reject it instead of registering it.
+			if msg.PeerID == "" {
+				log.Println("[Tracker] Rejecting join with empty peerId")
+				continue
+			}
 			peerID = msg.PeerID
 			peer := &Peer{
 				ID:       peerID,
@@ -83,18 +102,28 @@ func handleWebSocket(swarm *SwarmTree, w http.ResponseWriter, r *http.Request) {
 
 		case "ping":
 			swarm.UpdatePing(peerID)
-			_ = conn.WriteJSON(OutgoingMessage{Type: "pong"})
+			// Route the pong through the peer's serialised writer when the peer
+			// is registered; a bare conn.WriteJSON here races with swarm writes
+			// to the same connection from other goroutines.
+			if p := swarm.GetPeer(peerID); p != nil {
+				swarm.SendTo(p, OutgoingMessage{Type: "pong"})
+			} else {
+				_ = conn.WriteJSON(OutgoingMessage{Type: "pong"})
+			}
 
 		case "signal":
 			targetPeer := swarm.GetPeer(msg.To)
 			if targetPeer != nil && targetPeer.Conn != nil {
-				if wsConn, ok := targetPeer.Conn.(*websocket.Conn); ok {
-					_ = wsConn.WriteJSON(OutgoingMessage{
-						Type:    "signal",
-						From:    msg.From,
-						Payload: msg.Payload,
-					})
-				}
+				// `to` must be echoed back. The SDK's PeerManager only accepts a
+				// signal when msg.to equals its own peer id, so a relayed signal
+				// without it is silently dropped and no offer/answer/ICE exchange
+				// can ever complete.
+				swarm.SendTo(targetPeer, OutgoingMessage{
+					Type:    "signal",
+					To:      msg.To,
+					From:    msg.From,
+					Payload: msg.Payload,
+				})
 			}
 
 		case "chunk_manifest":
