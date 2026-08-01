@@ -41,7 +41,7 @@
     "swarm",
     "allrtc"
   ],
-  "license": "BSL-1.1",
+  "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.5.4"
