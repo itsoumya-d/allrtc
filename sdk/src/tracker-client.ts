@@ -146,10 +146,13 @@ export class TrackerClient extends EventEmitter<TrackerEvents> {
   sendChunkViaWs(seq: number, data: ArrayBuffer) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       // Convert ArrayBuffer to base64 for JSON transport
+      // Using a chunked apply approach avoids severe string allocation GC pauses
       const bytes = new Uint8Array(data);
       let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      const CHUNK_SIZE = 8192;
+      for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+        // cast to any to satisfy TS constraint on fromCharCode that expects number[]
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK_SIZE) as any);
       }
       const b64 = btoa(binary);
       this.send({ type: 'ws_chunk_relay', seq, chunkData: b64 });

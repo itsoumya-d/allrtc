@@ -321,8 +321,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     // Write into a fixed-size view so an oversized hash is truncated instead.
     const hashField = u8.subarray(12, 12 + PeerManager.HASH_FIELD_BYTES);
     hashField.fill(0x20); // space-pad, matching the .trim() on the read side
-    const encodedHash = PeerManager.textEncoder.encode(chunk.hash);
-    hashField.set(encodedHash.subarray(0, PeerManager.HASH_FIELD_BYTES));
+    PeerManager.textEncoder.encodeInto(chunk.hash, hashField);
 
     u8.set(new Uint8Array(chunk.data), PeerManager.HEADER_BYTES);
 
