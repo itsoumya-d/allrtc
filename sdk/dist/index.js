@@ -155,8 +155,9 @@ var TrackerClient = class extends EventEmitter {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const bytes = new Uint8Array(data);
       let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      const CHUNK_SIZE = 8192;
+      for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK_SIZE));
       }
       const b64 = btoa(binary);
       this.send({ type: "ws_chunk_relay", seq, chunkData: b64 });
@@ -342,7 +343,7 @@ var _PeerManager = class _PeerManager extends EventEmitter {
       const seq = dv.getUint32(0);
       const ts = dv.getFloat64(4);
       const hashBytes = new Uint8Array(buffer, 12, _PeerManager.HASH_FIELD_BYTES);
-      const hash = new TextDecoder().decode(hashBytes).trim();
+      const hash = _PeerManager.textDecoder.decode(hashBytes).trim();
       const data = buffer.slice(_PeerManager.HEADER_BYTES);
       this.emit("chunk", { seq, ts, hash, data, from: peerId });
     };
@@ -415,8 +416,7 @@ var _PeerManager = class _PeerManager extends EventEmitter {
     const u8 = new Uint8Array(buffer);
     const hashField = u8.subarray(12, 12 + _PeerManager.HASH_FIELD_BYTES);
     hashField.fill(32);
-    const encodedHash = new TextEncoder().encode(chunk.hash);
-    hashField.set(encodedHash.subarray(0, _PeerManager.HASH_FIELD_BYTES));
+    _PeerManager.textEncoder.encodeInto(chunk.hash, hashField);
     u8.set(new Uint8Array(chunk.data), _PeerManager.HEADER_BYTES);
     let sent = false;
     for (const [peerId, dc] of this.dataChannels) {
@@ -447,6 +447,10 @@ _PeerManager.MAX_RELAY_HISTORY = 1024;
 _PeerManager.HASH_FIELD_BYTES = 64;
 /** 4 bytes seq + 8 bytes timestamp + 64 bytes hash. */
 _PeerManager.HEADER_BYTES = 76;
+/** Cached encoder to prevent allocation overhead on every chunk. */
+_PeerManager.textEncoder = new TextEncoder();
+/** Cached decoder to prevent allocation overhead on every chunk. */
+_PeerManager.textDecoder = new TextDecoder();
 var PeerManager = _PeerManager;
 
 // src/chunk-hasher.ts
