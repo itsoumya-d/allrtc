@@ -5,3 +5,7 @@
 ## 2024-05-18 - [TextEncoder and TextDecoder Instantiation Overhead]
 **Learning:** In ultra-low latency WebRTC streaming (50ms interval), instantiating `TextEncoder` and `TextDecoder` on every chunk processing inside the tight loops causes significant GC pressure and CPU overhead.
 **Action:** Always cache instances of `TextEncoder` and `TextDecoder` as static class variables or global singletons to prevent allocation overhead in hot paths.
+
+## 2024-05-18 - [String Split Allocation Overhead in Go Hot Paths]
+**Learning:** In Go, using `strings.Split()` inside frequently called functions (like `findBestParentFor` which iterates over all peers) causes unnecessary allocations (slice and strings). In the tracker's IP prefix matching, this created significant GC pressure.
+**Action:** When extracting simple substrings like an IP subnet in a hot loop, use `strings.IndexByte()` to slice the original string directly, achieving zero allocations.

@@ -243,12 +243,18 @@ func (s *SwarmTree) findBestParentFor(forPeer *Peer, alsoAvoid ...string) *Peer 
 // ipPrefix extracts /16 subnet prefix from an IP address.
 // Peers in the same /16 are usually in the same city or ISP,
 // giving ~5-20ms RTT instead of 50-100ms cross-region.
+// Optimization: uses IndexByte to avoid strings.Split allocations (0 vs 2 allocs)
+// which significantly reduces GC pressure since this runs inside a O(N) loop.
 func ipPrefix(ip string) string {
-	parts := strings.Split(ip, ".")
-	if len(parts) >= 2 {
-		return parts[0] + "." + parts[1]
+	idx1 := strings.IndexByte(ip, '.')
+	if idx1 < 0 {
+		return ""
 	}
-	return ""
+	idx2 := strings.IndexByte(ip[idx1+1:], '.')
+	if idx2 < 0 {
+		return ip
+	}
+	return ip[:idx1+1+idx2]
 }
 
 func (s *SwarmTree) UpdatePing(peerID string) {
