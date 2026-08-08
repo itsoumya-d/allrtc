@@ -146,10 +146,14 @@ export class TrackerClient extends EventEmitter<TrackerEvents> {
   sendChunkViaWs(seq: number, data: ArrayBuffer) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       // Convert ArrayBuffer to base64 for JSON transport
+      // Use chunked String.fromCharCode.apply to avoid massive GC pauses
+      // from byte-by-byte string concatenation on 50ms intervals.
       const bytes = new Uint8Array(data);
       let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        // @ts-ignore - TS complains about apply with Uint8Array, but V8 supports it and it's 10x faster than Array.from
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
       }
       const b64 = btoa(binary);
       this.send({ type: 'ws_chunk_relay', seq, chunkData: b64 });
