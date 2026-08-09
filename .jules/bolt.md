@@ -5,3 +5,6 @@
 ## 2024-05-18 - [TextEncoder and TextDecoder Instantiation Overhead]
 **Learning:** In ultra-low latency WebRTC streaming (50ms interval), instantiating `TextEncoder` and `TextDecoder` on every chunk processing inside the tight loops causes significant GC pressure and CPU overhead.
 **Action:** Always cache instances of `TextEncoder` and `TextDecoder` as static class variables or global singletons to prevent allocation overhead in hot paths.
+## 2024-08-09 - IP Prefix Parsing Allocation Reduction
+**Learning:** `strings.Split` causes significant heap allocation overhead when called frequently on the critical path (like `findBestParentFor` in the swarm tracker) since it creates new slice and string objects.
+**Action:** When extracting a prefix from a structured string (like an IP address), use a manual loop to find the delimiter index and use Go string slicing (`str[:i]`) to return a substring with zero allocations.
