@@ -5,3 +5,7 @@
 ## 2024-05-18 - [TextEncoder and TextDecoder Instantiation Overhead]
 **Learning:** In ultra-low latency WebRTC streaming (50ms interval), instantiating `TextEncoder` and `TextDecoder` on every chunk processing inside the tight loops causes significant GC pressure and CPU overhead.
 **Action:** Always cache instances of `TextEncoder` and `TextDecoder` as static class variables or global singletons to prevent allocation overhead in hot paths.
+
+## 2024-05-18 - [String Allocation Overhead in Tracker Routing]
+**Learning:** In high-frequency routing algorithms (like `findBestParentFor` looping over thousands of peers in the tracker), using `strings.Split(ip, ".")` to extract IP prefixes causes massive garbage collection overhead because it allocates a new string slice for every check.
+**Action:** Use `strings.IndexByte` for zero-allocation string prefix extraction in hot paths.
