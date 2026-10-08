@@ -30,6 +30,7 @@ export class ChunkEncoder {
   private mimeType: string;
   private useWebCodecs: boolean;
   private frameCount = 0;
+  private generation = 0;
 
   constructor(
     private stream: MediaStream,
@@ -53,17 +54,18 @@ export class ChunkEncoder {
    * @param chunkTimeMs - Chunk interval in ms. Default 50ms for ultra-low latency.
    */
   start(onChunk: ChunkCallback, chunkTimeMs: number = 50) {
+    const generation = ++this.generation;
     this.onChunk = onChunk;
     this.seq = 0;
 
     if (this.useWebCodecs && ChunkEncoder.isWebCodecsSupported()) {
-      this.startWebCodecs(chunkTimeMs);
+      this.startWebCodecs(chunkTimeMs, generation);
     } else {
       this.startMediaRecorder(chunkTimeMs);
     }
   }
 
-  private async startWebCodecs(chunkTimeMs: number) {
+  private async startWebCodecs(chunkTimeMs: number, generation: number) {
     const videoTrack = this.stream.getVideoTracks()[0];
     if (!videoTrack) {
       this.startMediaRecorder(chunkTimeMs);
@@ -80,6 +82,9 @@ export class ChunkEncoder {
     } catch (e) {
       codec = 'avc1.42E01E';
     }
+
+    // stop() or a newer start may have invalidated this capability probe.
+    if (generation !== this.generation) return;
 
     this.videoEncoder = new (window as any).VideoEncoder({
       output: (chunk: any, metadata: any) => {
@@ -165,6 +170,7 @@ export class ChunkEncoder {
   }
 
   stop() {
+    ++this.generation;
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
     }
