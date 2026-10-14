@@ -44,7 +44,7 @@ type IncomingMessage struct {
 	Payload    any      `json:"payload,omitempty"`
 	Hashes     []string `json:"hashes,omitempty"`
 	SessionKey string   `json:"sessionKey,omitempty"`
-	Seq        uint32   `json:"seq,omitempty"`
+	Seq        *uint32   `json:"seq,omitempty"`
 	ChunkData  string   `json:"chunkData,omitempty"`
 }
 
@@ -63,6 +63,6 @@ type OutgoingMessage struct {
 	Viewers         int      `json:"viewers,omitempty"`
 	Depth           int      `json:"depth,omitempty"`
 	Publisher       bool     `json:"publisher,omitempty"`
-	Seq             uint32   `json:"seq"`
+	Seq             *uint32  `json:"seq,omitempty"`
 	ChunkData       string   `json:"chunkData,omitempty"`
 }
