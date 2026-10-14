@@ -478,6 +478,7 @@ var ChunkEncoder = class _ChunkEncoder {
     this.seq = 0;
     this.onChunk = null;
     this.frameCount = 0;
+    this.generation = 0;
     if (typeof options === "string") {
       this.mimeType = options;
       this.useWebCodecs = _ChunkEncoder.isWebCodecsSupported();
@@ -494,15 +495,16 @@ var ChunkEncoder = class _ChunkEncoder {
    * @param chunkTimeMs - Chunk interval in ms. Default 50ms for ultra-low latency.
    */
   start(onChunk, chunkTimeMs = 50) {
+    const generation = ++this.generation;
     this.onChunk = onChunk;
     this.seq = 0;
     if (this.useWebCodecs && _ChunkEncoder.isWebCodecsSupported()) {
-      this.startWebCodecs(chunkTimeMs);
+      this.startWebCodecs(chunkTimeMs, generation);
     } else {
       this.startMediaRecorder(chunkTimeMs);
     }
   }
-  async startWebCodecs(chunkTimeMs) {
+  async startWebCodecs(chunkTimeMs, generation) {
     const videoTrack = this.stream.getVideoTracks()[0];
     if (!videoTrack) {
       this.startMediaRecorder(chunkTimeMs);
@@ -518,6 +520,7 @@ var ChunkEncoder = class _ChunkEncoder {
     } catch (e) {
       codec = "avc1.42E01E";
     }
+    if (generation !== this.generation) return;
     this.videoEncoder = new window.VideoEncoder({
       output: (chunk, metadata) => {
         const arrayBuffer = new ArrayBuffer(chunk.byteLength);
@@ -593,6 +596,7 @@ var ChunkEncoder = class _ChunkEncoder {
     this.mediaRecorder.start(chunkTimeMs);
   }
   stop() {
+    ++this.generation;
     if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
       this.mediaRecorder.stop();
     }
