@@ -5,7 +5,7 @@ import "encoding/hex"
 // BroadcastChunkManifest relays at most 256 consecutive SHA-256 hashes. The
 // sequence is the first chunk in the batch. This is not a cryptographic signature.
 func (s *SwarmTree) BroadcastChunkManifest(senderID string, msg IncomingMessage) {
-	if len(msg.Hashes) == 0 || len(msg.Hashes) > 256 || uint64(msg.Seq)+uint64(len(msg.Hashes))-1 > 0xffffffff {
+	if msg.Seq == nil || len(msg.Hashes) == 0 || len(msg.Hashes) > 256 || uint64(*msg.Seq)+uint64(len(msg.Hashes))-1 > 0xffffffff {
 		return
 	}
 	for _, hash := range msg.Hashes {

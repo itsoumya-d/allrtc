@@ -11,6 +11,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+func sequence(value uint32) *uint32 { return &value }
+
 type manifestRecorder struct{ messages []OutgoingMessage }
 
 func (r *manifestRecorder) WriteJSON(value interface{}) error {
@@ -30,7 +32,7 @@ func manifestSwarm() (*SwarmTree, *manifestRecorder) {
 func TestManifestPreservesSequenceZeroAndBatch(t *testing.T) {
 	s, r := manifestSwarm()
 	hashes := []string{strings.Repeat("a", 64), strings.Repeat("b", 64)}
-	s.BroadcastChunkManifest("pub", IncomingMessage{Seq: 0, Hashes: hashes})
+	s.BroadcastChunkManifest("pub", IncomingMessage{Seq: sequence(0), Hashes: hashes})
 	if len(r.messages) != 1 { t.Fatal("expected one manifest") }
 	encoded, err := json.Marshal(r.messages[0])
 	if err != nil { t.Fatal(err) }
@@ -44,8 +46,8 @@ func TestManifestPreservesSequenceZeroAndBatch(t *testing.T) {
 func TestManifestRejectsInvalidBatches(t *testing.T) {
 	valid := strings.Repeat("a", 64)
 	cases := []IncomingMessage{
-		{}, {Hashes: []string{"bad"}}, {Hashes: []string{strings.Repeat("A", 64)}},
-		{Seq: 0xffffffff, Hashes: []string{valid, valid}}, {Hashes: make([]string, 257)},
+		{}, {Seq: sequence(0), Hashes: []string{"bad"}}, {Seq: sequence(0), Hashes: []string{strings.Repeat("A", 64)}},
+		{Seq: sequence(0xffffffff), Hashes: []string{valid, valid}}, {Seq: sequence(0), Hashes: make([]string, 257)},
 	}
 	for i, input := range cases {
 		s, r := manifestSwarm()
@@ -57,7 +59,7 @@ func TestManifestRejectsInvalidBatches(t *testing.T) {
 func TestManifestUsesConnectionSenderNotClaimedPeerID(t *testing.T) {
 	for _, sender := range []string{"", "missing", "viewer"} {
 		s, r := manifestSwarm()
-		s.BroadcastChunkManifest(sender, IncomingMessage{PeerID: "pub", Hashes: []string{strings.Repeat("a", 64)}})
+		s.BroadcastChunkManifest(sender, IncomingMessage{PeerID: "pub", Seq: sequence(0), Hashes: []string{strings.Repeat("a", 64)}})
 		if len(r.messages) != 0 { t.Fatalf("sender %q relayed a manifest", sender) }
 	}
 }
@@ -83,9 +85,39 @@ func TestManifestWebSocketContract(t *testing.T) {
 	if err := viewer.WriteJSON(IncomingMessage{Type: "join", PeerID: "viewer", Role: RoleLeaf}); err != nil { t.Fatal(err) }
 	if err := viewer.ReadJSON(&acknowledgement); err != nil { t.Fatal(err) }
 	hash := strings.Repeat("a", 64)
-	if err := pub.WriteJSON(IncomingMessage{Type: "chunk_manifest", Seq: 0, Hashes: []string{hash}}); err != nil { t.Fatal(err) }
+	if err := pub.WriteJSON(IncomingMessage{Type: "chunk_manifest", Seq: sequence(0), Hashes: []string{hash}}); err != nil { t.Fatal(err) }
 	var received map[string]interface{}
 	if err := viewer.ReadJSON(&received); err != nil { t.Fatal(err) }
 	if received["type"] != "chunk_manifest" || received["seq"] != float64(0) { t.Fatalf("bad manifest: %#v", received) }
 	if received["hashes"].([]interface{})[0] != hash { t.Fatal("hash changed in transit") }
+}
+
+func TestManifestRequiresExplicitSequence(t *testing.T) {
+ for _, raw := range []string{
+  `{"type":"chunk_manifest","hashes":["` + strings.Repeat("a", 64) + `"]}`,
+  `{"type":"chunk_manifest","seq":null,"hashes":["` + strings.Repeat("a", 64) + `"]}`,
+ } {
+  var input IncomingMessage
+  if err := json.Unmarshal([]byte(raw), &input); err != nil { t.Fatal(err) }
+  s, r := manifestSwarm()
+  s.BroadcastChunkManifest("pub", input)
+  if len(r.messages) != 0 { t.Fatalf("missing sequence relayed: %s", raw) }
+ }
+}
+
+func TestSequenceSerializationDoesNotChangeOtherMessages(t *testing.T) {
+ for _, kind := range []string{"pong", "signal", "assigned", "new_child", "stats"} {
+  data, err := json.Marshal(OutgoingMessage{Type: kind})
+  if err != nil { t.Fatal(err) }
+  var fields map[string]interface{}
+  if err := json.Unmarshal(data, &fields); err != nil { t.Fatal(err) }
+  if _, present := fields["seq"]; present { t.Fatalf("unexpected sequence: %s", data) }
+ }
+ for _, kind := range []string{"chunk_manifest", "ws_chunk_relay"} {
+  data, err := json.Marshal(OutgoingMessage{Type: kind, Seq: sequence(0)})
+  if err != nil { t.Fatal(err) }
+  var fields map[string]interface{}
+  if err := json.Unmarshal(data, &fields); err != nil { t.Fatal(err) }
+  if fields["seq"] != float64(0) { t.Fatalf("lost sequence zero: %s", data) }
+ }
 }
