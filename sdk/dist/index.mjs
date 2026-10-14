@@ -611,9 +611,10 @@ var AllRTCPublisher = class extends EventEmitter {
     this.encoder = new ChunkEncoder(stream);
     this.encoder.start((chunk) => {
       this.tracker.send({
-        type: "manifest",
+        type: "chunk_manifest",
+        peerId: this.myId,
         seq: chunk.seq,
-        hash: chunk.hash
+        hashes: [chunk.hash]
       });
       this.peerManager.broadcastChunk(chunk);
     });
@@ -721,8 +722,10 @@ var _AllRTCViewer = class _AllRTCViewer extends EventEmitter {
     this.tracker.on("open", () => this.emit("connected", void 0));
     this.tracker.on("close", () => this.emit("disconnected", void 0));
     this.tracker.on("message", (msg) => {
-      if (msg.type === "manifest") {
-        this.rememberExpectedHash(msg.seq, msg.hash);
+      if (msg.type === "chunk_manifest") {
+        if (Number.isInteger(msg.seq) && msg.seq >= 0 && msg.seq <= 4294967295 && Array.isArray(msg.hashes) && msg.hashes.length > 0 && msg.hashes.length <= 256 && msg.seq + msg.hashes.length - 1 <= 4294967295 && msg.hashes.every((hash) => typeof hash === "string" && /^[0-9a-f]{64}$/.test(hash))) {
+          msg.hashes.forEach((hash, offset) => this.rememberExpectedHash(msg.seq + offset, hash));
+        }
       } else if (msg.type === "assigned") {
         if (msg.parentPeerId) {
           this.peerManager.connectToPeer(msg.parentPeerId);

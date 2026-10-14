@@ -100,7 +100,7 @@ The `AdaptiveBitrateManager` class maps a bandwidth estimate onto quality tiers.
 2. **Mobile Battery / Data:** Smart Device Tiering. Mobile phones or metered connections are assigned as "Leaves" only — they receive video but do not relay.
 3. **WebRTC Blocking:** WebSocket Relay Fallback. If corporate firewalls block WebRTC UDP, AllRTC falls back to relaying video chunks through the tracker's WebSocket connection (port 443).
 4. **Network Switching:** ICE Restarts. Moving from WiFi to 4G triggers `performIceRestart()`, which renegotiates ICE candidates without tearing down the peer connection.
-5. **Data Integrity:** Async SHA-256 hashing. The publisher computes an unkeyed SHA-256 per chunk (a hash, not a signature — there is no key and no signing), and viewers compare it asynchronously. On mismatch the viewer logs a `console.warn` only; it does not drop the peer or notify children. `ReputationManager` in `security.ts` exists but is never instantiated. **Verification is also not reachable end to end today:** the publisher emits `{type:"manifest"}`, which the tracker's message switch has no case for, so the manifest is dropped and viewers never learn the expected hash. See Known Limitations.
+5. **Data Integrity:** Async SHA-256 hashing. The publisher computes an unkeyed SHA-256 per chunk (a hash, not a signature — there is no key and no signing), and viewers compare it asynchronously. On mismatch the viewer logs a `console.warn` only; it does not drop the peer or notify children. `ReputationManager` in `security.ts` exists but is never instantiated. **Manifest routing:** publisher, tracker and viewer use `{type:"chunk_manifest",seq,hashes}`. The sequence identifies the first hash; batches are limited to 256 consecutive chunks and sequence zero is explicit. Verification still occurs only when the expected hash arrives before its media chunk; late/lost manifests are not replayed. See Known Limitations.
 6. **Background Tab Throttling:** A silent `AudioContext` oscillator (gain = 0) prevents the browser from sleeping inactive tabs.
 7. **Tracker Bottleneck:** The tracker handles signaling and topology. It normally does not touch media, but the WebSocket fallback path (`ws_chunk_relay`) does route base64-encoded video chunks through the tracker, so under fallback it is on the media path.
 
@@ -206,7 +206,7 @@ tls-listening-port=443
 
 - **Transport:** WebRTC DataChannels are encrypted via DTLS. Tracker connections use WSS (TLS).
 - **Data Integrity:** The publisher computes a SHA-256 hash for every chunk. Viewers compare hashes asynchronously *after* forwarding. This is an unkeyed hash, not a signature: any peer that can inject a chunk can also compute a matching hash for it. It detects corruption, not a motivated attacker.
-- **Access Control: none.** The tracker has no authentication of any kind — no tokens, no origin check (`CheckOrigin` returns `true` for every request), and no authorization on message types. Any client can join a swarm, declare itself the publisher (`role: "publisher"` is taken on trust), or broadcast a `chunk_manifest` to every other peer. Do not expose the tracker publicly without putting your own authenticating proxy in front of it.
+- **Access Control: none.** The tracker has no authentication of any kind — no tokens, no origin check (`CheckOrigin` returns `true` for every request), and roles are self-declared. Manifest relaying is limited to the currently registered publisher connection, but any client can still join a swarm and declare itself the publisher (`role: "publisher"` is taken on trust). This is not authentication. Do not expose the tracker publicly without putting your own authenticating proxy in front of it.
 - **Stream isolation: none.** The tracker creates a single global `SwarmTree` and never reads the `streamId` query parameter, so peers from different streams are placed in the same swarm and can be assigned each other as parents.
 
 ---
@@ -288,3 +288,7 @@ A: The tracker will gracefully tear down the swarm or wait for a publisher recon
 
 Contributions are accepted under AGPL-3.0-or-later. Full terms: [LICENSING.md](LICENSING.md).
 
+
+### Manifest wire contract
+
+Publishers send `chunk_manifest` with an explicit uint32 `seq` and an array of 1–256 lowercase SHA-256 hex `hashes`; entry i describes chunk `seq + i`. Tracker forwarding preserves sequence zero and does not send a `sessionKey`. Viewers reject malformed batches and retain at most 2,048 expected hashes. Unkeyed hashes detect corruption, not authenticated authorship. Forward-first playback/relay, warning-only mismatch handling, unauthenticated joins, and late-manifest ordering remain limitations. No live browser media or TURN interoperability is claimed by the mocked SDK and local WebSocket contract tests.

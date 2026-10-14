@@ -127,7 +127,7 @@ func handleWebSocket(swarm *SwarmTree, w http.ResponseWriter, r *http.Request) {
 			}
 
 		case "chunk_manifest":
-			swarm.BroadcastChunkManifest(msg)
+			swarm.BroadcastChunkManifest(peerID, msg)
 
 		// WebSocket Chunk Relay: When WebRTC DataChannel is blocked by firewall,
 		// the publisher sends video chunks through the tracker's WebSocket.

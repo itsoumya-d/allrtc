@@ -50,8 +50,14 @@ export class AllRTCViewer extends EventEmitter<ViewerEvents> {
     this.tracker.on('close', () => this.emit('disconnected', undefined));
 
     this.tracker.on('message', (msg) => {
-      if (msg.type === 'manifest') {
-        this.rememberExpectedHash(msg.seq, msg.hash);
+      if (msg.type === 'chunk_manifest') {
+        // hashes[i] belongs to seq + i. Reject malformed batches atomically.
+        if (Number.isInteger(msg.seq) && msg.seq >= 0 && msg.seq <= 0xffffffff
+          && Array.isArray(msg.hashes) && msg.hashes.length > 0 && msg.hashes.length <= 256
+          && msg.seq + msg.hashes.length - 1 <= 0xffffffff
+          && msg.hashes.every((hash: unknown) => typeof hash === 'string' && /^[0-9a-f]{64}$/.test(hash))) {
+          msg.hashes.forEach((hash: string, offset: number) => this.rememberExpectedHash(msg.seq + offset, hash));
+        }
       } else if (msg.type === 'assigned') {
         // Connect to Primary Parent
         if (msg.parentPeerId) {
