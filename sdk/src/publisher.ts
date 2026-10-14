@@ -56,9 +56,10 @@ export class AllRTCPublisher extends EventEmitter<PublisherEvents> {
     this.encoder.start((chunk) => {
       // Send manifest to tracker
       this.tracker.send({
-        type: 'manifest',
+        type: 'chunk_manifest',
+        peerId: this.myId,
         seq: chunk.seq,
-        hash: chunk.hash
+        hashes: [chunk.hash]
       });
       // Broadcast to all seed peers
       this.peerManager.broadcastChunk(chunk);

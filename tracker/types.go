@@ -63,6 +63,6 @@ type OutgoingMessage struct {
 	Viewers         int      `json:"viewers,omitempty"`
 	Depth           int      `json:"depth,omitempty"`
 	Publisher       bool     `json:"publisher,omitempty"`
-	Seq             uint32   `json:"seq,omitempty"`
+	Seq             uint32   `json:"seq"`
 	ChunkData       string   `json:"chunkData,omitempty"`
 }

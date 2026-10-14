@@ -314,7 +314,7 @@ var _PeerManager = class _PeerManager extends EventEmitter {
       const seq = dv.getUint32(0);
       const ts = dv.getFloat64(4);
       const hashBytes = new Uint8Array(buffer, 12, _PeerManager.HASH_FIELD_BYTES);
-      const hash = new TextDecoder().decode(hashBytes).trim();
+      const hash = _PeerManager.textDecoder.decode(hashBytes).trim();
       const data = buffer.slice(_PeerManager.HEADER_BYTES);
       this.emit("chunk", { seq, ts, hash, data, from: peerId });
     };
@@ -387,7 +387,7 @@ var _PeerManager = class _PeerManager extends EventEmitter {
     const u8 = new Uint8Array(buffer);
     const hashField = u8.subarray(12, 12 + _PeerManager.HASH_FIELD_BYTES);
     hashField.fill(32);
-    const encodedHash = new TextEncoder().encode(chunk.hash);
+    const encodedHash = _PeerManager.textEncoder.encode(chunk.hash);
     hashField.set(encodedHash.subarray(0, _PeerManager.HASH_FIELD_BYTES));
     u8.set(new Uint8Array(chunk.data), _PeerManager.HEADER_BYTES);
     let sent = false;
@@ -419,6 +419,10 @@ _PeerManager.MAX_RELAY_HISTORY = 1024;
 _PeerManager.HASH_FIELD_BYTES = 64;
 /** 4 bytes seq + 8 bytes timestamp + 64 bytes hash. */
 _PeerManager.HEADER_BYTES = 76;
+/** Cached encoder to prevent allocation overhead on every chunk. */
+_PeerManager.textEncoder = new TextEncoder();
+/** Cached decoder to prevent allocation overhead on every chunk. */
+_PeerManager.textDecoder = new TextDecoder();
 var PeerManager = _PeerManager;
 
 // src/chunk-hasher.ts
@@ -603,9 +607,10 @@ var AllRTCPublisher = class extends EventEmitter {
     this.encoder = new ChunkEncoder(stream);
     this.encoder.start((chunk) => {
       this.tracker.send({
-        type: "manifest",
+        type: "chunk_manifest",
+        peerId: this.myId,
         seq: chunk.seq,
-        hash: chunk.hash
+        hashes: [chunk.hash]
       });
       this.peerManager.broadcastChunk(chunk);
     });
@@ -713,8 +718,10 @@ var _AllRTCViewer = class _AllRTCViewer extends EventEmitter {
     this.tracker.on("open", () => this.emit("connected", void 0));
     this.tracker.on("close", () => this.emit("disconnected", void 0));
     this.tracker.on("message", (msg) => {
-      if (msg.type === "manifest") {
-        this.rememberExpectedHash(msg.seq, msg.hash);
+      if (msg.type === "chunk_manifest") {
+        if (Number.isInteger(msg.seq) && msg.seq >= 0 && msg.seq <= 4294967295 && Array.isArray(msg.hashes) && msg.hashes.length > 0 && msg.hashes.length <= 256 && msg.seq + msg.hashes.length - 1 <= 4294967295 && msg.hashes.every((hash) => typeof hash === "string" && /^[0-9a-f]{64}$/.test(hash))) {
+          msg.hashes.forEach((hash, offset) => this.rememberExpectedHash(msg.seq + offset, hash));
+        }
       } else if (msg.type === "assigned") {
         if (msg.parentPeerId) {
           this.peerManager.connectToPeer(msg.parentPeerId);

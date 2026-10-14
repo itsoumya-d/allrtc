@@ -374,21 +374,6 @@ func (s *SwarmTree) sendJSON(p *Peer, msg OutgoingMessage) {
 	}
 }
 
-func (s *SwarmTree) BroadcastChunkManifest(msg IncomingMessage) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	outMsg := OutgoingMessage{
-		Type:       "chunk_manifest",
-		Hashes:     msg.Hashes,
-		SessionKey: msg.SessionKey,
-	}
-	for _, p := range s.peers {
-		if p.ID != msg.PeerID && p.Conn != nil {
-			s.sendJSON(p, outMsg)
-		}
-	}
-}
-
 // RelayChunkViaWs relays video chunks through WebSocket when WebRTC DataChannel
 // is blocked by a firewall. The chunk travels:
 //
