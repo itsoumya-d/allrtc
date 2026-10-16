@@ -25,6 +25,7 @@ type Peer struct {
 	Depth    int      `json:"depth"`
 	CanRelay bool     `json:"canRelay"`
 	IPAddr   string   `json:"ipAddr"` // Client IP for geographic proximity routing
+	IPPrefix string   `json:"-"`      // Cached /16 subnet prefix for proximity routing
 	LastPing int64    `json:"lastPing"`
 	Conn     any      `json:"-"`
 

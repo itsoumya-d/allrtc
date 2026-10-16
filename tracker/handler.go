@@ -85,6 +85,7 @@ func handleWebSocket(swarm *SwarmTree, w http.ResponseWriter, r *http.Request) {
 				Role:     msg.Role,
 				CanRelay: msg.CanRelay,
 				IPAddr:   clientIP,
+				IPPrefix: ipPrefix(clientIP),
 				LastPing: time.Now().Unix(),
 				Conn:     conn,
 			}

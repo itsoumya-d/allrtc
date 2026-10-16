@@ -200,7 +200,10 @@ func (s *SwarmTree) findBestParentFor(forPeer *Peer, alsoAvoid ...string) *Peer 
 	// (or absent), so proximity routing never actually matched.
 	newPrefix := ""
 	if forPeer != nil {
-		newPrefix = ipPrefix(forPeer.IPAddr)
+		newPrefix = forPeer.IPPrefix
+		if newPrefix == "" {
+			newPrefix = ipPrefix(forPeer.IPAddr) // Fallback if IPPrefix isn't cached
+		}
 		skip[forPeer.ID] = true
 	}
 
@@ -217,7 +220,11 @@ func (s *SwarmTree) findBestParentFor(forPeer *Peer, alsoAvoid ...string) *Peer 
 		}
 
 		// Check if same geographic region (IP /16 prefix match)
-		if newPrefix != "" && ipPrefix(p.IPAddr) == newPrefix {
+		pPrefix := p.IPPrefix
+		if pPrefix == "" {
+			pPrefix = ipPrefix(p.IPAddr)
+		}
+		if newPrefix != "" && pPrefix == newPrefix {
 			if p.Depth < nearbyMinDepth || (p.Depth == nearbyMinDepth && len(p.ChildIDs) < nearbyMinChildren) {
 				bestNearby = p
 				nearbyMinDepth = p.Depth
@@ -244,11 +251,15 @@ func (s *SwarmTree) findBestParentFor(forPeer *Peer, alsoAvoid ...string) *Peer 
 // Peers in the same /16 are usually in the same city or ISP,
 // giving ~5-20ms RTT instead of 50-100ms cross-region.
 func ipPrefix(ip string) string {
-	parts := strings.Split(ip, ".")
-	if len(parts) >= 2 {
-		return parts[0] + "." + parts[1]
+	first := strings.IndexByte(ip, '.')
+	if first == -1 {
+		return ""
 	}
-	return ""
+	second := strings.IndexByte(ip[first+1:], '.')
+	if second == -1 {
+		return ip
+	}
+	return ip[:first+1+second]
 }
 
 func (s *SwarmTree) UpdatePing(peerID string) {
